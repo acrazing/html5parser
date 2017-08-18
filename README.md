@@ -53,6 +53,9 @@ export function parse(input: string): INode[];
 
 // Low level API, get tokens
 export function tokenize(input: string): IToken[];
+
+// Utils API, walk the ast tree
+export function walk(ast: INode[], options: IWalkOptions): void;
 ```
 
 ## Spec

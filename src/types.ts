@@ -35,7 +35,7 @@ export interface ITag extends IBaseNode {
   open: ILiteral;
   name: ILiteral;
   attributes: IAttribute[];
-  body: Array<ITag | ILiteral> | null;
+  body: Array<ITag | ILiteral> | void | null;
   close: /* with close tag */ ILiteral | /* without close tag */ void | /* input ended before close */ null;
 }
 

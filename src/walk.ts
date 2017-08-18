@@ -8,4 +8,25 @@
  * @desc walk.ts
  */
 
+import { INode, SyntaxKind } from './types'
 
+export interface IWalkOptions {
+  enter?(node: INode, parent: INode | void, index: number): void;
+  leave?(node: INode, parent: INode | void, index: number): void;
+}
+
+function visit(node: INode, parent: INode | void, index: number, options: IWalkOptions) {
+  options.enter && options.enter(node, parent, index)
+  if (node.type === SyntaxKind.Tag && Array.isArray(node.body)) {
+    for (let i = 0; i < node.body.length; i++) {
+      visit(node.body[i], node, i, options)
+    }
+  }
+  options.leave && options.leave(node, parent, index)
+}
+
+export function walk(ast: INode[], options: IWalkOptions) {
+  for (let i = 0; i < ast.length; i++) {
+    visit(ast[i], void 0, i, options)
+  }
+}

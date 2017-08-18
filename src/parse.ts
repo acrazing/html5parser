@@ -8,4 +8,11 @@
  * @desc parse.ts
  */
 
+import { tokenize } from './tokenize'
+import { INode } from './types'
 
+export function parse(input: string): INode[] {
+  // TODO
+  tokenize(input)
+  return []
+}
