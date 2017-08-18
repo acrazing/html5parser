@@ -1,0 +1,36 @@
+{
+  "name": "html5parser",
+  "description": "A simple HTML5 parser, for walk and manipulate attributes and nodes.",
+  "version": "0.0.1",
+  "author": "acrazing <joking.young@gmail.com>",
+  "keywords": [
+    "html5",
+    "parser",
+    "manipulate",
+    "attribute"
+  ],
+  "license": "MIT",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node ./node_modules/.bin/mocha --compilers ts:ts-node/register,tsx:ts-node/register --recursive ./src/**/*.spec.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acrazing/html5parser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/acrazing/html5parser/issues"
+  },
+  "homepage": "https://github.com/acrazing/html5parser#readme",
+  "devDependencies": {
+    "@types/mocha": "^2.2.41",
+    "mocha": "^3.5.0",
+    "ts-node": "^3.3.0",
+    "tslint": "^5.6.0",
+    "typescript": "^2.4.2"
+  }
+}
