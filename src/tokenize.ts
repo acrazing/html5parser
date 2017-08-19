@@ -10,36 +10,33 @@
 
 enum State {
   Literal              = 'Literal',
-  BeforeOpenTag        = 'BeforeOpenTag', // <
+  BeforeOpenTag        = 'BeforeOpenTag',
   OpeningTag           = 'OpeningTag',
   AfterOpenTag         = 'AfterOpenTag',
   InValueNq            = 'InValueNq',
   InValueSq            = 'InValueSq',
   InValueDq            = 'InValueDq',
   ClosingOpenTag       = 'ClosingOpenTag',
-  OpeningSpecial       = 'OpeningSpecial', // after <!
-  OpeningDoctype       = 'OpeningDoctype', // after <!d, <!D
-  OpeningNormalComment = 'OpeningNormalComment', // after <!-
-  InNormalComment      = 'InNormalComment', // after <!--
-  InShortComment       = 'InShortComment', // after <!, not <!--, <!doctype
-  ClosingNormalComment = 'ClosingNormalComment', // after -
-  ClosingTag           = 'ClosingTag', // after </
-  InScript             = 'InScript',
-  InStyle              = 'InStyle',
-  ClosingScript        = 'ClosingScript',
-  ClosingStyle         = 'ClosingStyle',
+  OpeningSpecial       = 'OpeningSpecial',
+  OpeningDoctype       = 'OpeningDoctype',
+  OpeningNormalComment = 'OpeningNormalComment',
+  InNormalComment      = 'InNormalComment',
+  InShortComment       = 'InShortComment',
+  ClosingNormalComment = 'ClosingNormalComment',
+  ClosingTag           = 'ClosingTag',
 }
 
 export enum TokenKind {
-  Literal    = 'Literal', // abc, <, -, --
-  OpenTag    = 'OpenTag', // <div, <!doctype, <!--, <!
-  OpenTagEnd = 'OpenTagEnd', // >, -->, />
-  CloseTag   = 'CloseTag', // </[^>]>
+  Literal    = 'Literal', // include whitespace
+  OpenTag    = 'OpenTag', // trim leading '<'
+  OpenTagEnd = 'OpenTagEnd', // include tailing '>'
+  CloseTag   = 'CloseTag', // trim leading '<' and tailing '>'
 }
 
 export interface IToken {
   start: number;
   end: number;
+  value: string;
   type: TokenKind;
 }
 
@@ -51,11 +48,14 @@ let index: number
 let tokens: IToken[]
 
 function makeCodePoints(input: string) {
-  return input.split('').map((c) => c.charCodeAt(0))
+  return {
+    lower: input.toLowerCase().split('').map((c) => c.charCodeAt(0)),
+    upper: input.toUpperCase().split('').map((c) => c.charCodeAt(0)),
+    length: input.length,
+  }
 }
 
-const doctype = makeCodePoints('<!doctype')
-const DOCTYPE = makeCodePoints('<!DOCTYPE')
+const doctype = makeCodePoints('!doctype')
 
 enum Chars {
   _S = ' '.charCodeAt(0),
@@ -148,165 +148,210 @@ export function tokenize(input: string): IToken[] {
       case State.ClosingTag:
         parseClosingTag(c)
         break
-      case State.InScript:
-        parseScript(c)
-        break
-      case State.InStyle:
-        parseStyle(c)
-        break
       default:
         unexpected()
         break
     }
     index++
   }
-  return tokens
+  switch (state) {
+    case State.Literal:
+    case State.BeforeOpenTag:
+    case State.InValueNq:
+    case State.InValueSq:
+    case State.InValueDq:
+    case State.ClosingOpenTag:
+    case State.InNormalComment:
+    case State.InShortComment:
+    case State.ClosingNormalComment:
+      emitToken(TokenKind.Literal)
+      break
+    case State.OpeningTag:
+      emitToken(TokenKind.OpenTag)
+      break
+    case State.AfterOpenTag:
+      break
+    case State.OpeningSpecial:
+      emitToken(TokenKind.CloseTag)
+      break
+    case State.OpeningDoctype:
+      if (index - sectionStart === doctype.length) {
+        emitToken(TokenKind.OpenTag)
+      } else {
+        emitToken(TokenKind.OpenTag, void 0, sectionStart + 1)
+        emitToken(TokenKind.Literal)
+      }
+      break
+    case State.OpeningNormalComment:
+      if (index - sectionStart === 2) {
+        emitToken(TokenKind.OpenTag)
+      } else {
+        emitToken(TokenKind.OpenTag, void 0, sectionStart + 1)
+        emitToken(TokenKind.Literal)
+      }
+      break
+    case State.ClosingTag:
+      emitToken(TokenKind.CloseTag)
+      break
+    default:
+      break
+  }
+  const _tokens = tokens
+  init('')
+  return _tokens
 }
 
 function emitToken(kind: TokenKind, newState = state, end = index) {
-  tokens.push({ type: kind, start: sectionStart, end })
+  if (kind !== TokenKind.Literal || end !== sectionStart) {
+    // empty literal should be ignored
+    tokens.push({ type: kind, start: sectionStart, end, value: buffer.substring(sectionStart, end) })
+  }
   sectionStart = end
   state        = newState
 }
 
 function parseLiteral(c: number) {
-  if (c === Chars.Lt) {
+  if (c === Chars.Lt) { // <
     emitToken(TokenKind.Literal, State.BeforeOpenTag)
   }
 }
 
 function parseBeforeOpenTag(c: number) {
-  if ((c >= Chars.La && c <= Chars.Lz) || (c >= Chars.Ua && c <= Chars.Uz)) {
+  if ((c >= Chars.La && c <= Chars.Lz) || (c >= Chars.Ua && c <= Chars.Uz)) { // <d
     state        = State.OpeningTag
     sectionStart = index
-  } else if (c === Chars.Sl) {
+  } else if (c === Chars.Sl) { // </
     state        = State.ClosingTag
     sectionStart = index + 1
-  } else if (c === Chars.Lt) {
+  } else if (c === Chars.Lt) { // <<
     emitToken(TokenKind.Literal)
-  } else if (c === Chars.Ep) {
+  } else if (c === Chars.Ep) { // <!
     state        = State.OpeningSpecial
     sectionStart = index
-  } else if (c === Chars.Qm) {
+  } else if (c === Chars.Qm) { // <?
     // treat as short comment
     sectionStart = index
     emitToken(TokenKind.OpenTag, State.InShortComment)
-  } else {
+  } else { // <>
     // any other chars covert to normal state
     state = State.Literal
   }
 }
 
 function parseOpeningTag(c: number) {
-  if (isWhiteSpace(c)) {
+  if (isWhiteSpace(c)) { // <div ...
     emitToken(TokenKind.OpenTag, State.AfterOpenTag)
-  } else if (c === Chars.Gt) {
+  } else if (c === Chars.Gt) { // <div>
     emitToken(TokenKind.OpenTag)
     emitToken(TokenKind.OpenTagEnd, State.Literal, index + 1)
-  } else if (c === Chars.Sl) {
-    emitToken(TokenKind.OpenTag, State.AfterOpenTag)
+  } else if (c === Chars.Sl) { // <div/
+    emitToken(TokenKind.OpenTag, State.ClosingOpenTag)
   }
 }
 
 function parseAfterOpenTag(c: number) {
-  if (c === Chars.Gt) {
+  if (c === Chars.Gt) { // <div >
     emitToken(TokenKind.OpenTagEnd, State.Literal, index + 1)
-  } else if (c === Chars.Sl) {
+  } else if (c === Chars.Sl) { // <div /
     state        = State.ClosingOpenTag
     sectionStart = index
-  } else if (c === Chars.Eq) {
+  } else if (c === Chars.Eq) { // <div ...=...
     emitToken(TokenKind.Literal, void 0, index + 1)
-  } else if (c === Chars.Sq) {
-    state        = State.InValueSq
-    sectionStart = index
-  } else if (c === Chars.Dq) {
-    state        = State.InValueDq
-    sectionStart = index
-  } else if (isWhiteSpace(c)) {
+  } else if (c === Chars.Sq) { // <div ...'...
+    state = State.InValueSq
+  } else if (c === Chars.Dq) { // <div ..."...
+    state = State.InValueDq
+  } else if (isWhiteSpace(c)) { // whitespace, ignore
     // maybe need to emit whitespace
     sectionStart = index
-  } else {
+  } else { // <div ...name...
     state        = State.InValueNq
     sectionStart = index
   }
 }
 
 function parseInValueNq(c: number) {
-  if (c === Chars.Gt) {
+  if (c === Chars.Gt) { // <div xxx>
     emitToken(TokenKind.Literal)
     emitToken(TokenKind.OpenTagEnd, State.Literal, index + 1)
-  } else if (c === Chars.Sl) {
+  } else if (c === Chars.Sl) { // <div xxx/
     emitToken(TokenKind.Literal, State.ClosingOpenTag)
-  } else if (c === Chars.Eq) {
+  } else if (c === Chars.Eq) { // <div xxx=
     emitToken(TokenKind.Literal)
     emitToken(TokenKind.Literal, State.AfterOpenTag, index + 1)
-  } else if (isWhiteSpace(c)) {
+  } else if (isWhiteSpace(c)) { // <div xxx ...
     emitToken(TokenKind.Literal, State.AfterOpenTag)
   }
 }
 
 function parseInValueSq(c: number) {
-  if (c === Chars.Sq) {
+  if (c === Chars.Sq) { // <div 'xxx'
+    // FIXME: Chrome treat 'xxx'xx as one attribute name "'xxx'xx", and treat x='xxx'xx as two attributes: x='xxx', xx
     emitToken(TokenKind.Literal, State.AfterOpenTag, index + 1)
   }
 }
 
 function parseInValueDq(c: number) {
-  if (c === Chars.Dq) {
+  if (c === Chars.Dq) { // <div "xxx", problem same to Sq
     emitToken(TokenKind.Literal, State.AfterOpenTag, index + 1)
   }
 }
 
 function parseClosingOpenTag(c: number) {
-  if (c === Chars.Gt) {
+  if (c === Chars.Gt) { // <div />
     emitToken(TokenKind.OpenTagEnd, State.Literal, index + 1)
-  } else {
+  } else { // <div /...>
     emitToken(TokenKind.Literal, State.AfterOpenTag)
   }
 }
 
 function parseOpeningSpecial(c: number) {
   switch (c) {
-    case Chars.Cl:
+    case Chars.Cl: // <!-
       state = State.OpeningNormalComment
       break
-    case Chars.Ld:
-    case Chars.Ud:
+    case Chars.Ld: // <!d
+    case Chars.Ud: // <!D
       state = State.OpeningDoctype
       break
     default:
+      emitToken(TokenKind.OpenTag, State.InShortComment)
       break
   }
 }
 
 function parseOpeningDoctype(c: number) {
   const offset = index - sectionStart
-  if (offset === doctype.length) {
-    if (!isWhiteSpace(c)) {
-      unexpected()
+  if (offset === doctype.length) { // <!d, <!d , start: 0, index: 2
+    if (isWhiteSpace(c)) {
+      emitToken(TokenKind.OpenTag, State.AfterOpenTag)
     }
-    emitToken(TokenKind.OpenTag, State.AfterOpenTag)
-  } else if (doctype[offset] !== c && DOCTYPE[offset] !== c) {
-    emitToken(TokenKind.OpenTag, State.InShortComment, sectionStart + 2)
+    unexpected()
+  } else if (c === Chars.Gt) { // <!DOCT>
+    emitToken(TokenKind.OpenTag, void 0, sectionStart + 1)
+    emitToken(TokenKind.Literal)
+    emitToken(TokenKind.OpenTagEnd, State.Literal, index + 1)
+  } else if (doctype.lower[offset] !== c && doctype.upper[offset] !== c) { // <!DOCX...
+    emitToken(TokenKind.OpenTag, State.InShortComment, sectionStart + 1)
   }
 }
 
 function parseOpeningNormalComment(c: number) {
-  if (c !== Chars.Cl) {
-    emitToken(TokenKind.OpenTag, State.InShortComment, sectionStart + 2)
-  } else if (index === sectionStart + 4) {
+  if (c === Chars.Cl) { // <!--
     emitToken(TokenKind.OpenTag, State.InNormalComment, index + 1)
+  } else {
+    emitToken(TokenKind.OpenTag, State.InShortComment, sectionStart + 1)
   }
 }
 
 function parseNormalComment(c: number) {
-  if (c === Chars.Cl) {
+  if (c === Chars.Cl) { // <!-- ... -
     emitToken(TokenKind.Literal, State.ClosingNormalComment)
   }
 }
 
 function parseShortComment(c: number) {
-  if (c === Chars.Gt) {
+  if (c === Chars.Gt) { // <! ... >
     emitToken(TokenKind.Literal)
     emitToken(TokenKind.OpenTagEnd, State.Literal, index + 1)
   }
@@ -315,35 +360,21 @@ function parseShortComment(c: number) {
 function parseClosingNormalComment(c: number) {
   const offset = index - sectionStart
   if (offset === 2) {
-    if (c === Chars.Gt) {
+    if (c === Chars.Gt) { // <!-- xxx -->
       emitToken(TokenKind.OpenTagEnd, State.Literal, index + 1)
-    } else if (c === Chars.Sl) {
+    } else if (c === Chars.Sl) { // <!-- xxx ---
       emitToken(TokenKind.Literal, void 0, sectionStart + 1)
-    } else {
+    } else { // <!-- xxx --x
       state = State.InNormalComment
     }
-  } else if (c !== Chars.Cl) {
+  } else if (c !== Chars.Cl) { // <!-- xxx - ...
     state = State.InNormalComment
   }
 }
 
 function parseClosingTag(c: number) {
-  if (c === Chars.Gt) {
-    emitToken(TokenKind.CloseTag, State.Literal, index + 1)
-  }
-}
-
-function parseScript(c: number) {
-  // TODO
-  if (c === Chars.Lt) {
-    emitToken(TokenKind.Literal, State.ClosingScript)
-  }
-}
-
-function parseStyle(c: number) {
-  // TODO
-  if (c === Chars.Lt) {
-    emitToken(TokenKind.Literal, State.ClosingStyle)
+  if (c === Chars.Gt) { // </ xxx >
+    emitToken(TokenKind.CloseTag, State.Literal, index)
   }
 }
 

@@ -24,10 +24,14 @@ export interface ILiteral extends IBaseNode {
   value: string;
 }
 
+export interface IDeclaration extends ILiteral {
+  quote: '\'' | '"' | void;
+}
+
 export interface IAttribute extends IBaseNode {
   type: SyntaxKind.Attribute;
-  name: ILiteral;
-  value: ILiteral | void;
+  name: IDeclaration;
+  value: IDeclaration | void;
 }
 
 export interface ITag extends IBaseNode {
