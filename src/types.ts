@@ -9,9 +9,10 @@
  */
 
 export enum SyntaxKind {
-  Literal   = 'Literal',
-  Attribute = 'Attribute',
-  Tag       = 'Tag',
+  Literal     = 'Literal',
+  Attribute   = 'Attribute',
+  Declaration = 'Declaration',
+  Tag         = 'Tag',
 }
 
 export interface IBaseNode {
@@ -24,7 +25,9 @@ export interface ILiteral extends IBaseNode {
   value: string;
 }
 
-export interface IDeclaration extends ILiteral {
+export interface IDeclaration extends IBaseNode {
+  type: SyntaxKind.Declaration;
+  value: string;
   quote: '\'' | '"' | void;
 }
 
@@ -39,8 +42,12 @@ export interface ITag extends IBaseNode {
   open: ILiteral;
   name: ILiteral;
   attributes: IAttribute[];
-  body: Array<ITag | ILiteral> | void | null;
-  close: /* with close tag */ ILiteral | /* without close tag */ void | /* input ended before close */ null;
+  body: Array<ITag | ILiteral> // with close tag
+    | void // self closed
+    | null; // eof before open tag end
+  close: ILiteral // with close tag
+    | void // self closed
+    | null; // eof before open tag end or without close tag for not self closed tag
 }
 
-export type INode = ILiteral | IAttribute | ITag
+export type INode = ILiteral | IAttribute | ITag | IDeclaration
