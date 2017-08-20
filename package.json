@@ -1,7 +1,7 @@
 {
   "name": "html5parser",
   "description": "A simple HTML5 parser, for walk and manipulate attributes and nodes.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "acrazing <joking.young@gmail.com>",
   "keywords": [
     "html5",
