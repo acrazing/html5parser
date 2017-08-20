@@ -27,11 +27,15 @@ enum State {
 }
 
 export enum TokenKind {
-  Literal    = 'Literal', // include whitespace
-  OpenTag    = 'OpenTag', // trim leading '<'
-  OpenTagEnd = 'OpenTagEnd', // trim tailing '>', only could be '/' or ''
-  CloseTag   = 'CloseTag', // trim leading '</' and tailing '>'
-  Whitespace = 'Whitespace', // the whitespace between attributes
+  Literal     = 'Literal',
+  OpenTag     = 'OpenTag', // trim leading '<'
+  OpenTagEnd  = 'OpenTagEnd', // trim tailing '>', only could be '/' or ''
+  CloseTag    = 'CloseTag', // trim leading '</' and tailing '>'
+  Whitespace  = 'Whitespace', // the whitespace between attributes
+  AttrEq      = 'AttrEq',
+  AttrValueNq = 'AttrValueNq',
+  AttrValueSq = 'AttrValueSq',
+  AttrValueDq = 'AttrValueDq',
 }
 
 export interface IToken {
@@ -264,7 +268,7 @@ function parseAfterOpenTag() {
     emitToken(TokenKind.Whitespace, State.ClosingOpenTag)
   } else if (char === Chars.Eq) { // <div ...=...
     emitToken(TokenKind.Whitespace)
-    emitToken(TokenKind.Literal, void 0, index + 1)
+    emitToken(TokenKind.AttrEq, void 0, index + 1)
   } else if (char === Chars.Sq) { // <div ...'...
     emitToken(TokenKind.Whitespace, State.InValueSq)
   } else if (char === Chars.Dq) { // <div ..."...
@@ -276,27 +280,27 @@ function parseAfterOpenTag() {
 
 function parseInValueNq() {
   if (char === Chars.Gt) { // <div xxx>
-    emitToken(TokenKind.Literal)
+    emitToken(TokenKind.AttrValueNq)
     emitToken(TokenKind.OpenTagEnd)
   } else if (char === Chars.Sl) { // <div xxx/
-    emitToken(TokenKind.Literal, State.ClosingOpenTag)
+    emitToken(TokenKind.AttrValueNq, State.ClosingOpenTag)
   } else if (char === Chars.Eq) { // <div xxx=
-    emitToken(TokenKind.Literal)
-    emitToken(TokenKind.Literal, State.AfterOpenTag, index + 1)
+    emitToken(TokenKind.AttrValueNq)
+    emitToken(TokenKind.AttrEq, State.AfterOpenTag, index + 1)
   } else if (isWhiteSpace()) { // <div xxx ...
-    emitToken(TokenKind.Literal, State.AfterOpenTag)
+    emitToken(TokenKind.AttrValueNq, State.AfterOpenTag)
   }
 }
 
 function parseInValueSq() {
   if (char === Chars.Sq) { // <div 'xxx'
-    emitToken(TokenKind.Literal, State.AfterOpenTag, index + 1)
+    emitToken(TokenKind.AttrValueSq, State.AfterOpenTag, index + 1)
   }
 }
 
 function parseInValueDq() {
   if (char === Chars.Dq) { // <div "xxx", problem same to Sq
-    emitToken(TokenKind.Literal, State.AfterOpenTag, index + 1)
+    emitToken(TokenKind.AttrValueDq, State.AfterOpenTag, index + 1)
   }
 }
 
