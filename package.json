@@ -19,7 +19,8 @@
     "build": "rm -rf ./lib && ./node_modules/.bin/tsc",
     "lint": "./node_modules/.bin/tslint ./{src,typings}/**/*.{ts,d.ts}",
     "prepublish": "yarn build",
-    "test": "node ./node_modules/.bin/mocha --compilers ts:ts-node/register,tsx:ts-node/register --recursive ./src/**/*.spec.ts"
+    "test": "node ./node_modules/.bin/mocha --compilers ts:ts-node/register,tsx:ts-node/register --recursive ./src/**/*.spec.ts",
+    "test:one": "node ./node_modules/.bin/mocha --compilers ts:ts-node/register,tsx:ts-node/register --recursive"
   },
   "repository": {
     "type": "git",

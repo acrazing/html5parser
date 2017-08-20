@@ -32,7 +32,7 @@ export enum TokenKind {
   OpenTagEnd  = 'OpenTagEnd', // trim tailing '>', only could be '/' or ''
   CloseTag    = 'CloseTag', // trim leading '</' and tailing '>'
   Whitespace  = 'Whitespace', // the whitespace between attributes
-  AttrEq      = 'AttrEq',
+  AttrValueEq = 'AttrValueEq',
   AttrValueNq = 'AttrValueNq',
   AttrValueSq = 'AttrValueSq',
   AttrValueDq = 'AttrValueDq',
@@ -268,7 +268,7 @@ function parseAfterOpenTag() {
     emitToken(TokenKind.Whitespace, State.ClosingOpenTag)
   } else if (char === Chars.Eq) { // <div ...=...
     emitToken(TokenKind.Whitespace)
-    emitToken(TokenKind.AttrEq, void 0, index + 1)
+    emitToken(TokenKind.AttrValueEq, void 0, index + 1)
   } else if (char === Chars.Sq) { // <div ...'...
     emitToken(TokenKind.Whitespace, State.InValueSq)
   } else if (char === Chars.Dq) { // <div ..."...
@@ -286,7 +286,7 @@ function parseInValueNq() {
     emitToken(TokenKind.AttrValueNq, State.ClosingOpenTag)
   } else if (char === Chars.Eq) { // <div xxx=
     emitToken(TokenKind.AttrValueNq)
-    emitToken(TokenKind.AttrEq, State.AfterOpenTag, index + 1)
+    emitToken(TokenKind.AttrValueEq, State.AfterOpenTag, index + 1)
   } else if (isWhiteSpace()) { // <div xxx ...
     emitToken(TokenKind.AttrValueNq, State.AfterOpenTag)
   }
