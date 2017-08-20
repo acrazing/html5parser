@@ -197,9 +197,11 @@ export function parse(input: string): INode[] {
         }
         break
       case TokenKind.OpenTag:
+        node = void 0
         parseOpenTag()
         break
       case TokenKind.CloseTag:
+        node = void 0
         parseCloseTag()
         break
       default:

@@ -109,6 +109,143 @@ const scenes: Array<{
       ),
     ],
   },
+  {
+    name: 'nested tags',
+    input: `
+<div id="1">
+  hello world
+  <h1 id="h1">h1</h1>
+  <img src="/src/index.ts">
+  <input />
+  <div id="2">
+    <div id="3">
+      <span>span</span>
+      <empty></empty>
+    </div>
+  </div>
+</div>
+    `,
+    nodes: [
+      text('\n', 0),
+      tag(
+        `<div id="1">
+  hello world
+  <h1 id="h1">h1</h1>
+  <img src="/src/index.ts">
+  <input />
+  <div id="2">
+    <div id="3">
+      <span>span</span>
+      <empty></empty>
+    </div>
+  </div>
+</div>`,
+        'div',
+        text('<div id="1">', 1),
+        [
+          attr(text('id', 6), value('1', '"', 9)),
+        ],
+        [
+          text('\n  hello world\n  ', 13),
+          tag(
+            '<h1 id="h1">h1</h1>',
+            'h1',
+            text('<h1 id="h1">', 30),
+            [
+              attr(text('id', 34), value('h1', '"', 37)),
+            ],
+            [
+              text('h1', 42),
+            ],
+            text('</h1>', 44),
+            30,
+          ),
+          text('\n  ', 49),
+          tag(
+            '<img src="/src/index.ts">',
+            'img',
+            text('<img src="/src/index.ts">', 52),
+            [
+              attr(text('src', 57), value('/src/index.ts', '"', 61)),
+            ],
+            void 0,
+            null,
+            52,
+          ),
+          text('\n  ', 77),
+          tag(
+            '<input />',
+            'input',
+            text('<input />', 80),
+            [],
+            void 0,
+            null,
+            80,
+          ),
+          text('\n  ', 89),
+          tag(
+            `<div id="2">
+    <div id="3">
+      <span>span</span>
+      <empty></empty>
+    </div>
+  </div>`,
+            'div',
+            text('<div id="2">', 92),
+            [
+              attr(text('id', 97), value('2', '"', 100)),
+            ],
+            [
+              text('\n    ', 104),
+              tag(
+                `<div id="3">
+      <span>span</span>
+      <empty></empty>
+    </div>`,
+                'div',
+                text('<div id="3">', 109),
+                [
+                  attr(text('id', 114), value('3', '"', 117)),
+                ],
+                [
+                  text('\n      ', 121),
+                  tag(
+                    '<span>span</span>',
+                    'span',
+                    text('<span>', 128),
+                    [],
+                    [text('span', 134)],
+                    text('</span>', 138),
+                    128,
+                  ),
+                  text('\n      ', 145),
+                  tag(
+                    '<empty></empty>',
+                    'empty',
+                    text('<empty>', 152),
+                    [],
+                    [],
+                    text('</empty>', 159),
+                    152,
+                  ),
+                  text('\n    ', 167),
+                ],
+                text('</div>', 172),
+                109,
+              ),
+              text('\n  ', 178),
+            ],
+            text('</div>', 181),
+            92,
+          ),
+          text('\n', 187),
+        ],
+        text('</div>', 188),
+        1,
+      ),
+      text('\n    ', 194),
+    ],
+  },
 ]
 
 describe('parse cases', () => {
