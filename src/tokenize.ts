@@ -308,7 +308,8 @@ function parseClosingOpenTag() {
   if (char === Chars.Gt) { // <div />
     emitToken(TokenKind.OpenTagEnd)
   } else { // <div /...>
-    emitToken(TokenKind.Literal, State.AfterOpenTag)
+    emitToken(TokenKind.AttrValueNq, State.AfterOpenTag)
+    parseAfterOpenTag()
   }
 }
 
