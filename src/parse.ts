@@ -109,8 +109,29 @@ function parseOpenTag() {
 
   const tag = createTag()
   pushNode(tag)
-  while (index < count) {
-    index++
+  if (tag.name === '' || tag.name === '!' || tag.name === '!--') {
+    tag.open.value = '<' + tag.open.value
+    if (index === count) {
+      return
+    } else {
+      token = tokens[++index]
+      if (token.type !== TokenKind.OpenTagEnd) {
+        node     = createLiteral()
+        tag.body = [node]
+        while (++index < count) {
+          token = tokens[index]
+          if (token.type === TokenKind.OpenTagEnd) {
+            break
+          }
+          appendLiteral()
+        }
+      }
+      tag.close = createLiteral(token.start, token.end + 1, `${token.value}>`)
+      tag.end   = tag.close.end
+    }
+    return
+  }
+  while (++index < count) {
     token = tokens[index]
     if (token.type === TokenKind.OpenTagEnd) {
       tag.end = tag.open.end = token.end + 1
@@ -171,15 +192,9 @@ function parseCloseTag() {
   if (!tagChain || tagChain.tag.name !== token.value) {
     unexpected()
   } else {
-    tagChain.tag.close = createLiteral()
-
-    tagChain.tag.close.start -= 2
-    tagChain.tag.close.end += 1
-    tagChain.tag.close.value = '</' + tagChain.tag.close.value + '>'
-
-    tagChain.tag.end = tagChain.tag.close.end
-
-    tagChain = tagChain.parent
+    tagChain.tag.close = createLiteral(token.start - 2, token.end + 1, `</${token.value}>`)
+    tagChain.tag.end   = tagChain.tag.close.end
+    tagChain           = tagChain.parent
   }
 }
 

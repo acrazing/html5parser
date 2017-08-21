@@ -37,20 +37,3 @@ export function inspectToken(input: string): string {
   }
   return output
 }
-
-if (!module.parent) {
-  console.log(inspectToken(`
-<div id="1">
-  hello world
-  <h1 id="h1">h1</h1>
-  <img src="/src/index.ts">
-  <input />
-  <div id="2">
-    <div id="3">
-      <span>span</span>
-      <empty></empty>
-    </div>
-  </div>
-</div>
-    `))
-}

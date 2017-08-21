@@ -221,6 +221,19 @@ const cases: ICase[] = [
       token(' div ', TokenKind.CloseTag, index + 3),
     ],
   },
+  {
+    name: 'special normal comment',
+    input: '<!---- - -- ---->',
+    tokens: [
+      token('!--', TokenKind.OpenTag, 1),
+      token('-- '),
+      token('- '),
+      token('-- '),
+      token('-'),
+      token('-'),
+      token('--', TokenKind.OpenTagEnd),
+    ],
+  },
 ]
 
 describe('simple cases', () => {

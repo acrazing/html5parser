@@ -371,7 +371,7 @@ function parseClosingNormalComment() {
   if (offset === 2) {
     if (char === Chars.Gt) { // <!-- xxx -->
       emitToken(TokenKind.OpenTagEnd)
-    } else if (char === Chars.Sl) { // <!-- xxx ---
+    } else if (char === Chars.Cl) { // <!-- xxx ---
       emitToken(TokenKind.Literal, void 0, sectionStart + 1)
     } else { // <!-- xxx --x
       state = State.InNormalComment
