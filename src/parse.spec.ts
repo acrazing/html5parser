@@ -336,6 +336,36 @@ const scenes: Array<{
       ),
     ],
   },
+  {
+    name: 'script',
+    input: '<script></div></script</script >',
+    nodes: [
+      tag(
+        '<script></div></script</script >',
+        'script',
+        text('<script>', 0),
+        [],
+        [text('</div></script', 8)],
+        text('</script >', 22),
+        0,
+      ),
+    ],
+  },
+  {
+    name: 'script',
+    input: '<style></div></style</style >',
+    nodes: [
+      tag(
+        '<style></div></style</style >',
+        'style',
+        text('<style>', 0),
+        [],
+        [text('</div></style', 7)],
+        text('</style >', 20),
+        0,
+      ),
+    ],
+  },
 ]
 
 describe('parse cases', () => {

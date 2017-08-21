@@ -66,7 +66,7 @@ function createTag(): ITag {
     end: token.end,
     type: SyntaxKind.Tag,
     open: createLiteral(token.start - 1), // not finished
-    name: token.value.toLowerCase(),
+    name: token.value,
     attributes: [],
     body: null,
     close: null,
@@ -189,7 +189,7 @@ function parseOpenTag() {
 }
 
 function parseCloseTag() {
-  if (!tagChain || tagChain.tag.name !== token.value) {
+  if (!tagChain || !token.value.startsWith(tagChain.tag.name)) {
     unexpected()
   } else {
     tagChain.tag.close = createLiteral(token.start - 2, token.end + 1, `</${token.value}>`)

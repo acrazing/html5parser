@@ -234,6 +234,28 @@ const cases: ICase[] = [
       token('--', TokenKind.OpenTagEnd),
     ],
   },
+  {
+    name: 'script',
+    input: '<script></div></script</script >',
+    tokens: [
+      token('script', TokenKind.OpenTag, 1),
+      token('', TokenKind.OpenTagEnd),
+      token('</div>', TokenKind.Literal, index + 1),
+      token('</script'),
+      token('script ', TokenKind.CloseTag, index + 2),
+    ],
+  },
+  {
+    name: 'style',
+    input: '<style></div></style</style >',
+    tokens: [
+      token('style', TokenKind.OpenTag, 1),
+      token('', TokenKind.OpenTagEnd),
+      token('</div>', TokenKind.Literal, index + 1),
+      token('</style'),
+      token('style ', TokenKind.CloseTag, index + 2),
+    ],
+  },
 ]
 
 describe('simple cases', () => {

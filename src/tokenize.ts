@@ -52,6 +52,9 @@ let sectionStart: number
 let index: number
 let tokens: IToken[]
 let char: number
+let inScript: boolean
+let inStyle: boolean
+let offset: number
 
 function makeCodePoints(input: string) {
   return {
@@ -62,6 +65,8 @@ function makeCodePoints(input: string) {
 }
 
 const doctype = makeCodePoints('!doctype')
+const style   = makeCodePoints('style')
+const script  = makeCodePoints('script')
 
 enum Chars {
   _S = ' '.charCodeAt(0),
@@ -102,6 +107,9 @@ function init(input: string) {
   sectionStart = 0
   index        = 0
   tokens       = []
+  inScript     = false
+  inStyle      = false
+  offset       = 0
 }
 
 export function tokenize(input: string): IToken[] {
@@ -208,9 +216,23 @@ export function tokenize(input: string): IToken[] {
 }
 
 function emitToken(kind: TokenKind, newState = state, end = index) {
+  let value = buffer.substring(sectionStart, end)
+  if (kind === TokenKind.OpenTag || kind === TokenKind.CloseTag) {
+    value = value.toLowerCase()
+  }
+  if (kind === TokenKind.OpenTag) {
+    if (value === 'script') {
+      inScript = true
+    } else if (value === 'style') {
+      inStyle = true
+    }
+  }
+  if (kind === TokenKind.CloseTag) {
+    inScript = inStyle = false
+  }
   if (!((kind === TokenKind.Literal || kind === TokenKind.Whitespace) && end === sectionStart)) {
     // empty literal should be ignored
-    tokens.push({ type: kind, start: sectionStart, end, value: buffer.substring(sectionStart, end) })
+    tokens.push({ type: kind, start: sectionStart, end, value })
   }
   if (kind === TokenKind.OpenTagEnd || kind === TokenKind.CloseTag) {
     sectionStart = end + 1
@@ -228,6 +250,15 @@ function parseLiteral() {
 }
 
 function parseBeforeOpenTag() {
+  if (inScript || inStyle) {
+    if (char === Chars.Sl) {
+      state        = State.ClosingTag
+      sectionStart = index + 1
+    } else {
+      state = State.Literal
+    }
+    return
+  }
   if ((char >= Chars.La && char <= Chars.Lz) || (char >= Chars.Ua && char <= Chars.Uz)) { // <d
     state        = State.OpeningTag
     sectionStart = index
@@ -329,7 +360,7 @@ function parseOpeningSpecial() {
 }
 
 function parseOpeningDoctype() {
-  const offset = index - sectionStart
+  offset = index - sectionStart
   if (offset === doctype.length) { // <!d, <!d , start: 0, index: 2
     if (isWhiteSpace()) {
       emitToken(TokenKind.OpenTag, State.AfterOpenTag)
@@ -367,7 +398,7 @@ function parseShortComment() {
 }
 
 function parseClosingNormalComment() {
-  const offset = index - sectionStart
+  offset = index - sectionStart
   if (offset === 2) {
     if (char === Chars.Gt) { // <!-- xxx -->
       emitToken(TokenKind.OpenTagEnd)
@@ -382,7 +413,38 @@ function parseClosingNormalComment() {
 }
 
 function parseClosingTag() {
-  if (char === Chars.Gt) { // </ xxx >
+  offset = index - sectionStart
+  if (inStyle) {
+    if (char === Chars.Lt) {
+      sectionStart -= 2
+      emitToken(TokenKind.Literal, State.BeforeOpenTag)
+    } else if (offset < style.length) {
+      if (style.lower[offset] !== char && style.upper[offset] !== char) {
+        sectionStart -= 2
+        state = State.Literal
+      }
+    } else if (char === Chars.Gt) {
+      emitToken(TokenKind.CloseTag)
+    } else if (!isWhiteSpace()) {
+      sectionStart -= 2
+      state = State.Literal
+    }
+  } else if (inScript) {
+    if (char === Chars.Lt) {
+      sectionStart -= 2
+      emitToken(TokenKind.Literal, State.BeforeOpenTag)
+    } else if (offset < script.length) {
+      if (script.lower[offset] !== char && script.upper[offset] !== char) {
+        sectionStart -= 2
+        state = State.Literal
+      }
+    } else if (char === Chars.Gt) {
+      emitToken(TokenKind.CloseTag)
+    } else if (!isWhiteSpace()) {
+      sectionStart -= 2
+      state = State.Literal
+    }
+  } else if (char === Chars.Gt) { // </ xxx >
     emitToken(TokenKind.CloseTag)
   }
 }
