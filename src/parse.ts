@@ -8,9 +8,10 @@
  * @desc parse.ts
  */
 
-import { ANY, selfCloseTags } from './config'
+import { ANY, noNestedTags, selfCloseTags } from './config'
 import { IToken, tokenize, TokenKind } from './tokenize'
 import { IAttribute, IAttributeValue, INode, ITag, IText, SyntaxKind } from './types'
+import { getLineRanges, getPosition } from './utils'
 
 interface IContext {
   parent: IContext | void;
@@ -25,6 +26,7 @@ let nodes: INode[]
 let token: IToken
 let node: IText | void
 let buffer: string
+let lines: number[] | void
 
 function init(input?: string) {
   if (input === void 0) {
@@ -41,12 +43,17 @@ function init(input?: string) {
   nodes    = []
   token    = void 0 as any
   node     = void 0
+  lines    = void 0
 }
 
 function pushNode(_node: ITag | IText) {
   if (!tagChain) {
     nodes.push(_node)
+  } else if (_node.type === SyntaxKind.Tag && _node.name === tagChain.tag.name && noNestedTags[_node.name]) {
+    tagChain = tagChain.parent
+    pushNode(_node)
   } else if (tagChain.tag.body) {
+    tagChain.tag.end = _node.end
     tagChain.tag.body.push(_node)
   }
 }
@@ -99,7 +106,14 @@ function appendLiteral(_node: IText = node as IText) {
 }
 
 function unexpected() {
-  throw new Error(`Unexpected token "${token.value}(${token.type})" at [${token.start},${token.end}]`)
+  if (lines === void 0) {
+    lines = getLineRanges(buffer)
+  }
+  const [line, column] = getPosition(lines, token.start)
+  throw new Error(
+    `Unexpected token "${token.value}(${token.type})" at [${line},${column}]`
+    + (tagChain ? ` when parsing tag: ${JSON.stringify(tagChain.tag.name)}.` : ''),
+  )
 }
 
 function parseOpenTag() {
@@ -189,13 +203,20 @@ function parseOpenTag() {
 }
 
 function parseCloseTag() {
-  if (!tagChain || !token.value.startsWith(tagChain.tag.name)) {
-    unexpected()
-  } else {
-    tagChain.tag.close = createLiteral(token.start - 2, token.end + 1, `</${token.value}>`)
-    tagChain.tag.end   = tagChain.tag.close.end
-    tagChain           = tagChain.parent
+  let _context: IContext | void = tagChain
+  while (true) {
+    if (!_context || token.value.startsWith(_context.tag.name)) {
+      break
+    }
+    _context = _context.parent
   }
+  if (!_context) {
+    return
+  }
+  _context.tag.close = createLiteral(token.start - 2, token.end + 1, `</${token.value}>`)
+  _context.tag.end   = _context.tag.close.end
+  _context           = _context.parent
+  tagChain           = _context
 }
 
 export function parse(input: string): INode[] {

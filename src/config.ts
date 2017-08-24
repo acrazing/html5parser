@@ -22,4 +22,6 @@ export const selfCloseTags = createMap<true>(
 
 export const rawTextTags = createMap<true>('script,style', true)
 
-export const ANY: any = void 0 as any
+export const noNestedTags = createMap<true>('li,option,select,textarea', true)
+
+export const ANY: any = void 0
