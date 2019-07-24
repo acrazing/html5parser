@@ -8,39 +8,38 @@
  * @desc misc.spec.ts
  */
 
-import * as fs from 'fs'
-import fetch from 'node-fetch'
-import * as path from 'path'
-import { parse } from './parse'
+import * as fs from 'fs';
+import fetch from 'node-fetch';
+import * as path from 'path';
+import { parse } from './parse';
 
-function run(id: string, url: string) {
-  fetch(url).then((r) => r.text()).then((d) => {
-    fs.writeFileSync(path.join(process.cwd(), 'temp', `${id}.html`), d)
-    const ast = parse(d)
-    fs.writeFileSync(path.join(process.cwd(), 'temp', `${id}.json`), JSON.stringify(ast, void 0, 2))
-    console.log('[OK]: %s, %s', id, url)
-  }).catch((err) => {
-    console.error('[ERR]: %s, %s', id, err.message)
-  })
+function run(url: string) {
+  const id = url.replace(/[^\w\d]+/g, '_').replace(/^_+|_+$/g, '');
+  console.log('Parsing %s', url);
+  return fetch(url)
+    .then((r) => r.text())
+    .then((d) => {
+      fs.writeFileSync(path.join(process.cwd(), 'temp', `${id}.html`), d);
+      const ast = parse(d);
+      fs.writeFileSync(
+        path.join(process.cwd(), 'temp', `${id}.json`),
+        JSON.stringify(ast, void 0, 2),
+      );
+      console.log('[OK]: %s, %s', id, url);
+    })
+    .catch((err) => {
+      console.error('[ERR]: %s, %s', id, err.message);
+    });
 }
 
-for (const scene of [
-  [
-    'baidu',
-    'https://www.baidu.com/',
-  ],
-  [
-    'same',
-    'https://same.com',
-  ],
-  [
-    'github',
-    'https://github.com',
-  ],
-  [
-    'tieba',
-    'https://tieba.baidu.com',
-  ],
-]) {
-  run(scene[0], scene[1])
-}
+const scenes = [
+  'https://github.com/',
+  'https://www.npmjs.com/',
+  'https://www.zhihu.com/',
+];
+
+describe('real scenarios', () => {
+  for (const scene of scenes) {
+    it(`parse ${scene}`, async () => run(scene));
+  }
+});

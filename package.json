@@ -1,26 +1,37 @@
 {
   "name": "html5parser",
-  "description": "A simple HTML5 parser, for walk and manipulate attributes and nodes.",
-  "version": "0.2.0",
+  "description": "A fast, accurate AST parser for HTML5",
+  "version": "1.0.0",
   "author": "acrazing <joking.young@gmail.com>",
   "keywords": [
     "html5",
     "parser",
-    "manipulate",
-    "attribute"
+    "ast",
+    "attributes"
   ],
   "license": "MIT",
   "main": "lib/index.js",
-  "directories": {
-    "lib": "lib",
-    "test": "test"
-  },
+  "module": "lib/index.mjs",
+  "types": "lib/index.d.ts",
+  "files": [
+    "assets/",
+    "lib/",
+    "src/"
+  ],
   "scripts": {
-    "build": "rm -rf ./lib && ./node_modules/.bin/tsc",
-    "lint": "./node_modules/.bin/tslint ./{src,typings}/**/*.{ts,d.ts}",
-    "prepublish": "yarn build",
-    "test": "node ./node_modules/.bin/mocha --compilers ts:ts-node/register,tsx:ts-node/register --recursive ./src/**/*.spec.ts",
-    "test:one": "node ./node_modules/.bin/mocha --compilers ts:ts-node/register,tsx:ts-node/register --recursive"
+    "build": "run-s clean && run-p build:cjs build:esm && run-s build:esm:rename build:cjs:rename",
+    "build:cjs": "tsc --outDir cjs --module commonjs",
+    "build:cjs:rename": "run-p build:cjs:rename:js build:cjs:rename:map",
+    "build:cjs:rename:js": "find ./cjs -type f -name '*.js' | sed -E 's/^\\.\\/cjs\\/(.+)$/\\1/' | xargs -I % mv ./cjs/% ./lib/%",
+    "build:cjs:rename:map": "find ./cjs -type f -name '*.js.map' | sed -E 's/^\\.\\/cjs\\/(.+)$/\\1/' | xargs -I % mv ./cjs/% ./lib/%",
+    "build:esm": "tsc --outDir lib --module esnext --declaration",
+    "build:esm:rename": "run-p build:esm:rename:js build:esm:rename:map",
+    "build:esm:rename:js": "find ./lib -type f -name '*.js' | sed -E 's/^(.+)\\.js$/\\1/' | xargs -I % mv %.js %.mjs",
+    "build:esm:rename:map": "find ./lib -type f -name '*.js.map' | sed -E 's/^(.+)\\.js\\.map$/\\1/' | xargs -I % mv %.js.map %.mjs.map",
+    "clean": "rm -rf cjs esm lib build temp .cache",
+    "prepublishOnly": "run-s test build",
+    "start": "npm run clean && npm run build:esm -- --watch",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -31,16 +42,72 @@
   },
   "homepage": "https://github.com/acrazing/html5parser#readme",
   "devDependencies": {
-    "@types/mocha": "^2.2.41",
-    "@types/node": "^8.0.7",
-    "@types/node-fetch": "^1.6.7",
-    "mocha": "^3.5.0",
-    "ts-node": "^3.3.0",
-    "tslint": "^5.6.0",
-    "typescript": "^2.4.2"
+    "@types/jest": "^24.0.15",
+    "@types/node": "^12.6.8",
+    "@types/node-fetch": "^2.5.0",
+    "husky": "^3.0.1",
+    "jest": "^24.8.0",
+    "lint-staged": "^9.2.0",
+    "node-fetch": "^2.6.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^1.18.2",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.5.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node",
+      "mjs"
+    ],
+    "cacheDirectory": ".cache/jest",
+    "collectCoverage": false,
+    "collectCoverageFrom": [
+      "<rootDir>/src/**/*.{ts,tsx}",
+      "!**/*.d.ts"
+    ],
+    "coverageDirectory": "temp/coverage",
+    "globals": {
+      "__DEV__": true,
+      "ENV": {}
+    },
+    "testMatch": [
+      "<rootDir>/src/**/*.spec.{ts,tsx}"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    }
+  },
+  "cliVersion": "8.8.4",
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,less,scss,md}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "prettier": {
+    "printWidth": 80,
+    "tabWidth": 2,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": true,
+    "jsxSingleQuote": false,
+    "trailingComma": "all",
+    "bracketSpacing": true,
+    "jsxBracketSameLine": false,
+    "arrowParens": "always",
+    "endOfLine": "lf"
   },
   "dependencies": {
-    "node-fetch": "^1.7.2",
-    "parse5": "^3.0.2"
+    "tslib": "^1.10.0"
   }
 }
