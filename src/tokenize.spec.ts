@@ -80,7 +80,7 @@ const cases: ICase[] = [
   {
     name: 'attribute values',
     input:
-      '<div a b= "c=1" d e = "f" = g \'h\'=i "j"k=lmn o=\'pq\' r="st"u>M</div>',
+      '<div a b= c=1 d e = f = g \'h\'=i "j"k=lmn o=\'pq\' r="st"u>M</div>',
     tokens: [
       token('div', TokenKind.OpenTag, 1),
       token(' ', TokenKind.Whitespace),
@@ -253,7 +253,7 @@ describe('simple cases', () => {
   for (const _case of cases) {
     it(`case "${_case.name}"`, () => {
       const tokens = tokenize(_case.input);
-      assert.deepEqual(tokens, _case.tokens);
+      assert.deepStrictEqual(tokens, _case.tokens);
     });
   }
 });

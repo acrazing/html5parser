@@ -97,12 +97,12 @@ const scenes: Array<{
   },
   {
     name: 'tag attributes',
-    input: '<div a1 b2="c3" d4 = "e5" f6=\'g7\' h8="i9" />',
+    input: '<div a1 b2=c3 d4 = e5 f6=\'g7\' h8="i9" />',
     nodes: [
       tag(
-        '<div a1 b2="c3" d4 = "e5" f6=\'g7\' h8="i9" />',
+        '<div a1 b2=c3 d4 = e5 f6=\'g7\' h8="i9" />',
         'div',
-        text('<div a1 b2="c3" d4 = "e5" f6=\'g7\' h8="i9" />', 0),
+        text('<div a1 b2=c3 d4 = e5 f6=\'g7\' h8="i9" />', 0),
         [
           attr(text('a1', 5)),
           attr(text('b2', index + 1), value('c3', void 0, index + 1)),
@@ -367,7 +367,7 @@ const scenes: Array<{
 describe('parse cases', () => {
   for (const scene of scenes) {
     it(`case ${JSON.stringify(scene.name)}`, () => {
-      assert.deepEqual(parse(scene.input), scene.nodes);
+      assert.deepStrictEqual(parse(scene.input), scene.nodes);
     });
   }
 });
