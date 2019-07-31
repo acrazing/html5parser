@@ -25,12 +25,12 @@ export interface IText extends IBaseNode {
 
 export interface IAttributeValue extends IBaseNode {
   value: string;
-  quote: "'" | '"' | void;
+  quote: "'" | '"' | undefined;
 }
 
 export interface IAttribute extends IBaseNode {
   name: IText;
-  value: IAttributeValue | void;
+  value: IAttributeValue | undefined;
 }
 
 export interface ITag extends IBaseNode {
@@ -38,8 +38,18 @@ export interface ITag extends IBaseNode {
   open: IText;
   name: string;
   attributes: IAttribute[];
-  body: Array<ITag | IText> | void | null; // with close tag // self closed // eof before open tag end
-  close: IText | void | null; // with close tag // self closed // eof before open tag end or without close tag for not self closed tag
+  // the attribute map, if `options.setAttributeMap` is `true`
+  // this will be a Record, key is the attribute name literal,
+  // value is the attribute self.
+  attributeMap: Record<string, IAttribute> | undefined;
+  body:
+    | Array<ITag | IText> // with close tag
+    | undefined // self closed
+    | null; // EOF before open tag end
+  close:
+    | IText // with close tag
+    | undefined // self closed
+    | null; // EOF before end or without close tag
 }
 
 export type INode = IText | ITag;

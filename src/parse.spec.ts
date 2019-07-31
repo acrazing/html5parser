@@ -35,8 +35,8 @@ function tag(
   name: string,
   open: IText,
   attributes: IAttribute[],
-  body: INode[] | void | null,
-  close: IText | void | null,
+  body: INode[] | undefined | null,
+  close: IText | undefined | null,
   start: number,
 ): ITag {
   return {
@@ -46,6 +46,7 @@ function tag(
     open: open,
     name: name,
     attributes: attributes,
+    attributeMap: undefined,
     body: body,
     close: close,
   };
@@ -62,7 +63,7 @@ function attr(name: IText, value?: IAttributeValue): IAttribute {
 
 function value(
   input: string,
-  quote: void | "'" | '"',
+  quote: undefined | "'" | '"',
   start = index,
 ): IAttributeValue {
   return {
@@ -370,4 +371,30 @@ describe('parse cases', () => {
       assert.deepStrictEqual(parse(scene.input), scene.nodes);
     });
   }
+});
+
+describe('parse options', () => {
+  it('should setAttributeMap', () => {
+    const ast = parse(`<div same="1" diff="2" same="3" />`, {
+      setAttributeMap: true,
+    });
+    const div = tag(
+      '<div same="1" diff="2" same="3" />',
+      'div',
+      text('<div same="1" diff="2" same="3" />', 0),
+      [
+        attr(text('same', 5), value('1', '"', index + 1)),
+        attr(text('diff', index + 1), value('2', '"', index + 1)),
+        attr(text('same', index + 1), value('3', '"', index + 1)),
+      ],
+      void 0,
+      null,
+      0,
+    );
+    div.attributeMap = {
+      same: div.attributes[2],
+      diff: div.attributes[1],
+    };
+    expect(ast).toEqual([div]);
+  });
 });

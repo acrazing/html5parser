@@ -21,21 +21,29 @@ import {
 import { getLineRanges, getPosition } from './utils';
 
 interface IContext {
-  parent: IContext | void;
+  parent: IContext | undefined;
   tag: ITag;
+}
+
+export interface ParseOptions {
+  // create tag's attributes map
+  // if true, will set ITag.attributeMap property
+  // as a `Record<string, IAttribute>`
+  setAttributeMap: boolean;
 }
 
 let index: number;
 let count: number;
 let tokens: IToken[];
-let tagChain: IContext | void;
+let tagChain: IContext | undefined;
 let nodes: INode[];
 let token: IToken;
-let node: IText | void;
+let node: IText | undefined;
 let buffer: string;
-let lines: number[] | void;
+let lines: number[] | undefined;
+let parseOptions: ParseOptions | undefined;
 
-function init(input?: string) {
+function init(input?: string, options?: ParseOptions) {
   if (input === void 0) {
     count = 0;
     tokens.length = 0;
@@ -51,6 +59,7 @@ function init(input?: string) {
   token = void 0 as any;
   node = void 0;
   lines = void 0;
+  parseOptions = options;
 }
 
 function pushNode(_node: ITag | IText) {
@@ -90,6 +99,7 @@ function createTag(): ITag {
     open: createLiteral(token.start - 1), // not finished
     name: token.value,
     attributes: [],
+    attributeMap: void 0,
     body: null,
     close: null,
   };
@@ -121,7 +131,7 @@ function createAttributeValue(): IAttributeValue {
   };
 }
 
-function appendLiteral(_node: IText = node as IText) {
+function appendLiteral(_node: IText | IAttributeValue = node as IText) {
   _node.value += token.value;
   _node.end = token.end;
 }
@@ -139,13 +149,25 @@ function unexpected() {
   );
 }
 
+function buildAttributeMap(tag: ITag) {
+  if (parseOptions!.setAttributeMap) {
+    tag.attributeMap = {};
+    for (const attr of tag.attributes) {
+      tag.attributeMap[attr.name.value] = attr;
+    }
+  }
+}
+
+const enum OpenTagState {
+  BeforeAttr,
+  InName,
+  AfterName,
+  AfterEqual,
+  InValue,
+}
+
 function parseOpenTag() {
-  let state:
-    | 0 /* before attr */
-    | 1 /* in name */
-    | 2 /* after name */
-    | 3 /* after = */
-    | 4 /* in value */ = 0;
+  let state = OpenTagState.BeforeAttr;
 
   let attr: IAttribute = ANY;
 
@@ -184,54 +206,55 @@ function parseOpenTag() {
       } else {
         tag.body = void 0;
       }
+      buildAttributeMap(tag);
       break;
-    } else if (state === 0) {
+    } else if (state === OpenTagState.BeforeAttr) {
       if (token.type !== TokenKind.Whitespace) {
         attr = createAttribute();
-        state = 1;
+        state = OpenTagState.InName;
         tag.attributes.push(attr);
       }
-    } else if (state === 1) {
+    } else if (state === OpenTagState.InName) {
       if (token.type === TokenKind.Whitespace) {
-        state = 2;
+        state = OpenTagState.AfterName;
       } else if (token.type === TokenKind.AttrValueEq) {
-        state = 3;
+        state = OpenTagState.AfterEqual;
       } else {
         appendLiteral(attr.name);
       }
-    } else if (state === 2) {
+    } else if (state === OpenTagState.AfterName) {
       if (token.type !== TokenKind.Whitespace) {
         if (token.type === TokenKind.AttrValueEq) {
-          state = 3;
+          state = OpenTagState.AfterEqual;
         } else {
           attr = createAttribute();
-          state = 1;
+          state = OpenTagState.InName;
           tag.attributes.push(attr);
         }
       }
-    } else if (state === 3) {
+    } else if (state === OpenTagState.AfterEqual) {
       if (token.type !== TokenKind.Whitespace) {
         attr.value = createAttributeValue();
         if (token.type === TokenKind.AttrValueNq) {
-          state = 4;
+          state = OpenTagState.InValue;
         } else {
           attr.end = attr.value.end;
-          state = 0;
+          state = OpenTagState.BeforeAttr;
         }
       }
     } else {
       if (token.type === TokenKind.Whitespace) {
-        attr.end = (attr.value as IAttributeValue).end;
-        state = 0;
+        attr.end = attr.value!.end;
+        state = OpenTagState.BeforeAttr;
       } else {
-        appendLiteral(attr.value as any);
+        appendLiteral(attr.value);
       }
     }
   }
 }
 
 function parseCloseTag() {
-  let _context: IContext | void = tagChain;
+  let _context = tagChain;
   while (true) {
     if (!_context || token.value.startsWith(_context.tag.name)) {
       break;
@@ -251,8 +274,11 @@ function parseCloseTag() {
   tagChain = _context;
 }
 
-export function parse(input: string): INode[] {
-  init(input);
+export function parse(input: string, options?: ParseOptions): INode[] {
+  init(input, {
+    setAttributeMap: false,
+    ...options,
+  } as ParseOptions);
   while (index < count) {
     token = tokens[index];
     switch (token.type) {

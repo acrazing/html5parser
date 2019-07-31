@@ -61,7 +61,15 @@ html.walk(ast, {
 
 ```ts
 // Top level API, parse html to ast tree
-export function parse(input: string): INode[];
+export function parse(input: string, options?: ParseOptions): INode[];
+
+export interface ParseOptions {
+  // create tag's attributes map
+  // if true, will set ITag.attributeMap property
+  // as a `Record<string, IAttribute>`
+  // see {ITag#attributeMap} bellow
+  setAttributeMap: boolean;
+}
 
 // Low level API, get tokens
 export function tokenize(input: string): IToken[];
@@ -69,6 +77,87 @@ export function tokenize(input: string): IToken[];
 // Utils API, walk the ast tree
 export function walk(ast: INode[], options: IWalkOptions): void;
 ```
+
+## Abstract Syntax Tree Spec
+
+1. `IBaseNode`: the base struct for all the nodes:
+
+   ```ts
+   export interface IBaseNode {
+     start: number; // the start position of the node (include)
+     end: number; // the end position of the node (exclude)
+   }
+   ```
+
+2. `IText`: The text node struct:
+
+   ```ts
+   export interface IText extends IBaseNode {
+     type: SyntaxKind.Text;
+     value: string; // text value
+   }
+   ```
+
+3. `ITag`: The tag node struct
+
+   ```ts
+   export interface ITag extends IBaseNode {
+     type: SyntaxKind.Tag;
+     open: IText;
+     name: string;
+     attributes: IAttribute[];
+     // the attribute map, if `options.setAttributeMap` is `true`
+     // this will be a Record, key is the attribute name literal,
+     // value is the attribute self.
+     attributeMap: Record<string, IAttribute> | undefined;
+     body:
+       | Array<ITag | IText> // with close tag
+       | undefined // self closed
+       | null; // EOF before open tag end
+     close:
+       | IText // with close tag
+       | undefined // self closed
+       | null; // EOF before end or without close tag
+   }
+   ```
+
+4. `IAttribute`: the attribute struct:
+
+   ```ts
+   export interface IAttribute extends IBaseNode {
+     name: IText; // the name of the attribute
+     value: IAttributeValue | void; // the value of the attribute
+   }
+   ```
+
+5. `IAttributeValue`: the attribute value struct:
+
+   ```ts
+   // NOTE: the range start and end contains quotes.
+   export interface IAttributeValue extends IBaseNode {
+     value: string; // the value text, exclude leading and tailing `'` or `"`
+     quote: "'" | '"' | void; // the quote type
+   }
+   ```
+
+6. `INode`: the exposed nodes:
+
+   ```ts
+   export type INode = ITag | IText;
+   ```
+
+## Warnings
+
+This is use for HTML5, that means:
+
+1. All tags like `<? ... ?>`, `<! ... >` (except for `<!doctype ...>`, case insensitive)
+   is treated as `Comment`, that means `CDATASection` is treated as comment.
+2. Special tag names:
+
+- `"!doctype"` (case insensitive), the doctype declaration
+- `"!"`: short comment
+- `"!--"`: normal comment
+- `""`(empty string): short comment, for `<? ... >`, the leading `?` is treated as comment content
 
 ## Benchmark
 
@@ -104,66 +193,6 @@ parse5 failed (exit code 1)
 
 sax                : 10.2110 ms/file ± 13.5204
 ```
-
-## Abstract Syntax Tree Spec
-
-1. `IBaseNode`: the base struct for all the nodes:
-   ```ts
-   export interface IBaseNode {
-     start: number; // the start position of the node (include)
-     end: number; // the end position of the node (exclude)
-   }
-   ```
-2. `IText`: The text node struct:
-   ```ts
-   export interface IText extends IBaseNode {
-     type: SyntaxKind.Text;
-     value: string; // text value
-   }
-   ```
-3. `ITag`: The tag node struct
-   ```ts
-   export interface ITag extends IBaseNode {
-     type: SyntaxKind.Tag;
-     open: IText; // the open tag, just like <div>, <img/>, etc.
-     name: string; // the tag name, just like div, img, etc.
-     attributes: IAttribute[]; // the attributes
-     body: Array<ITag | IText> | void | null; // with close tag, if body is empty, it is empty array, just like <div></div> // self closed, just like <div/>, <img> // eof before open tag end just liek <div
-     close: IText | void | null; // with close tag, just like </div>, etc. // self closed, just like open with <div/> <img> // eof before open tag end or without close tag for not self closed tag
-   }
-   ```
-4. `IAttribute`: the attribute struct:
-   ```ts
-   export interface IAttribute extends IBaseNode {
-     name: IText; // the name of the attribute
-     value: IAttributeValue | void; // the value of the attribute
-   }
-   ```
-5. `IAttributeValue`: the attribute value struct:
-   ```ts
-   // NOTE: the range start and end contains quotes.
-   export interface IAttributeValue extends IBaseNode {
-     value: string; // the value text, exclude leading and tailing `'` or `"`
-     quote: "'" | '"' | void; // the quote type
-   }
-   ```
-6. `INode`: the exposed nodes:
-   ```ts
-   export type INode = ITag | IText;
-   ```
-
-## Warning
-
-This is use for HTML5, that means:
-
-1. All tags like `<? ... ?>`, `<! ... >` (except for `<!doctype ...>`, case insensitive)
-   is treated as `Comment`, that means `CDATASection` is treated as comment.
-2. Special tag names:
-
-- `"!doctype"` (case insensitive), the doctype declaration
-- `"!"`: short comment
-- `"!--"`: normal comment
-- `""`(empty string): short comment, for `<? ... >`, the leading `?` is treated as comment content
 
 ## License
 
