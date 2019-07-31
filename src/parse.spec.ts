@@ -8,11 +8,18 @@
  * @desc parse.spec.ts
  */
 
-import * as assert from 'assert'
-import { parse } from './parse'
-import { IAttribute, IAttributeValue, INode, ITag, IText, SyntaxKind } from './types'
+import * as assert from 'assert';
+import { parse } from './parse';
+import {
+  IAttribute,
+  IAttributeValue,
+  INode,
+  ITag,
+  IText,
+  SyntaxKind,
+} from './types';
 
-let index = 0
+let index = 0;
 
 function text(input: string, start = index): IText {
   return {
@@ -20,7 +27,7 @@ function text(input: string, start = index): IText {
     start: start,
     end: index = input.length + start,
     value: input,
-  }
+  };
 }
 
 function tag(
@@ -41,7 +48,7 @@ function tag(
     attributes: attributes,
     body: body,
     close: close,
-  }
+  };
 }
 
 function attr(name: IText, value?: IAttributeValue): IAttribute {
@@ -50,36 +57,36 @@ function attr(name: IText, value?: IAttributeValue): IAttribute {
     end: index = value ? value.end : name.end,
     name: name,
     value: value,
-  }
+  };
 }
 
-function value(input: string, quote: void | '\'' | '"', start = index): IAttributeValue {
+function value(
+  input: string,
+  quote: void | "'" | '"',
+  start = index,
+): IAttributeValue {
   return {
     start: start,
     end: index = start + (quote === void 0 ? 0 : 2) + input.length,
     value: input,
     quote: quote,
-  }
+  };
 }
 
 const scenes: Array<{
-  name: string,
-  input: string,
-  nodes: INode[],
+  name: string;
+  input: string;
+  nodes: INode[];
 }> = [
   {
     name: 'text',
     input: 'hello world',
-    nodes: [
-      text('hello world', 0),
-    ],
+    nodes: [text('hello world', 0)],
   },
   {
     name: 'text twice',
     input: 'hello < world',
-    nodes: [
-      text('hello < world', 0),
-    ],
+    nodes: [text('hello < world', 0)],
   },
   {
     name: 'single tag',
@@ -90,17 +97,17 @@ const scenes: Array<{
   },
   {
     name: 'tag attributes',
-    input: '<div a1 b2=c3 d4 = e5 f6=\'g7\' h8="i9" />',
+    input: '<div a1 b2="c3" d4 = "e5" f6=\'g7\' h8="i9" />',
     nodes: [
       tag(
-        '<div a1 b2=c3 d4 = e5 f6=\'g7\' h8="i9" />',
+        '<div a1 b2="c3" d4 = "e5" f6=\'g7\' h8="i9" />',
         'div',
-        text('<div a1 b2=c3 d4 = e5 f6=\'g7\' h8="i9" />', 0),
+        text('<div a1 b2="c3" d4 = "e5" f6=\'g7\' h8="i9" />', 0),
         [
           attr(text('a1', 5)),
           attr(text('b2', index + 1), value('c3', void 0, index + 1)),
           attr(text('d4', index + 1), value('e5', void 0, index + 3)),
-          attr(text('f6', index + 1), value('g7', '\'', index + 1)),
+          attr(text('f6', index + 1), value('g7', "'", index + 1)),
           attr(text('h8', index + 1), value('i9', '"', index + 1)),
         ],
         void 0,
@@ -142,21 +149,15 @@ const scenes: Array<{
 </div>`,
         'div',
         text('<div id="1">', 1),
-        [
-          attr(text('id', 6), value('1', '"', 9)),
-        ],
+        [attr(text('id', 6), value('1', '"', 9))],
         [
           text('\n  hello world\n  ', 13),
           tag(
             '<h1 id="h1">h1</h1>',
             'h1',
             text('<h1 id="h1">', 30),
-            [
-              attr(text('id', 34), value('h1', '"', 37)),
-            ],
-            [
-              text('h1', 42),
-            ],
+            [attr(text('id', 34), value('h1', '"', 37))],
+            [text('h1', 42)],
             text('</h1>', 44),
             30,
           ),
@@ -165,9 +166,7 @@ const scenes: Array<{
             '<img src="/src/index.ts">',
             'img',
             text('<img src="/src/index.ts">', 52),
-            [
-              attr(text('src', 57), value('/src/index.ts', '"', 61)),
-            ],
+            [attr(text('src', 57), value('/src/index.ts', '"', 61))],
             void 0,
             null,
             52,
@@ -192,9 +191,7 @@ const scenes: Array<{
   </div>`,
             'div',
             text('<div id="2">', 92),
-            [
-              attr(text('id', 97), value('2', '"', 100)),
-            ],
+            [attr(text('id', 97), value('2', '"', 100))],
             [
               text('\n    ', 104),
               tag(
@@ -204,9 +201,7 @@ const scenes: Array<{
     </div>`,
                 'div',
                 text('<div id="3">', 109),
-                [
-                  attr(text('id', 114), value('3', '"', 117)),
-                ],
+                [attr(text('id', 114), value('3', '"', 117))],
                 [
                   text('\n      ', 121),
                   tag(
@@ -272,7 +267,8 @@ const scenes: Array<{
   },
   {
     name: 'comments',
-    input: '<!-- normal comment --><!- short comment -><! short-2 comment ><? qm comment ?><![CDATA[ cdata ]]>',
+    input:
+      '<!-- normal comment --><!- short comment -><! short-2 comment ><? qm comment ?><![CDATA[ cdata ]]>',
     nodes: [
       tag(
         '<!-- normal comment -->',
@@ -366,12 +362,12 @@ const scenes: Array<{
       ),
     ],
   },
-]
+];
 
 describe('parse cases', () => {
   for (const scene of scenes) {
     it(`case ${JSON.stringify(scene.name)}`, () => {
-      assert.deepEqual(parse(scene.input), scene.nodes)
-    })
+      assert.deepEqual(parse(scene.input), scene.nodes);
+    });
   }
-})
+});

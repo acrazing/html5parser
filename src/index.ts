@@ -8,8 +8,8 @@
  * @desc index.ts
  */
 
-export * from './walk'
-export * from './types'
-export * from './parse'
-export * from './tokenize'
-export * from './utils'
+export * from './walk';
+export * from './types';
+export * from './parse';
+export * from './tokenize';
+export * from './utils';

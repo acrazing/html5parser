@@ -8,8 +8,8 @@
  * @desc tokenize.spec.ts
  */
 
-import * as assert from 'assert'
-import { IToken, tokenize, TokenKind } from './tokenize'
+import * as assert from 'assert';
+import { IToken, tokenize, TokenKind } from './tokenize';
 
 interface ICase {
   name: string;
@@ -17,66 +17,60 @@ interface ICase {
   tokens: IToken[];
 }
 
-let index = 0
+let index = 0;
 
-function token(value: string, type: TokenKind = TokenKind.Literal, start = index) {
+function token(
+  value: string,
+  type: TokenKind = TokenKind.Literal,
+  start = index,
+) {
   const v = {
     start: start,
     end: start + value.length,
     value,
     type,
-  }
-  index   = v.end
-  return v
+  };
+  index = v.end;
+  return v;
 }
 
 const cases: ICase[] = [
   {
     name: 'single Literal',
     input: 'hello',
-    tokens: [
-      token('hello', TokenKind.Literal, 0),
-    ],
+    tokens: [token('hello', TokenKind.Literal, 0)],
   },
   {
     name: 'Literal end with <',
     input: 'hello<',
-    tokens: [
-      token('hello', void 0, 0),
-      token('<'),
-    ],
+    tokens: [token('hello', void 0, 0), token('<')],
   },
   {
     name: 'Literal unexpected <',
     input: 'hello< world',
-    tokens: [
-      token('hello', void 0, 0),
-      token('< world'),
-    ],
+    tokens: [token('hello', void 0, 0), token('< world')],
   },
   {
     name: 'OpenTag EOF',
     input: '<div',
-    tokens: [
-      token('div', TokenKind.OpenTag, 1),
-    ],
+    tokens: [token('div', TokenKind.OpenTag, 1)],
   },
   {
     name: 'attribute names',
-    input: '<div a1 \'b2\' "c3" \'d4\'e5 \'f6"\' "g7\'"></div>',
+    input: "<div a1 'b2' \"c3\" 'd4'e5 'f6\"' \"g7'\"></div>",
     tokens: [
       token('div', TokenKind.OpenTag, 1),
       token(' ', TokenKind.Whitespace),
       token('a1', TokenKind.AttrValueNq),
       token(' ', TokenKind.Whitespace),
-      token('\'b2\'', TokenKind.AttrValueSq),
+      token("'b2'", TokenKind.AttrValueSq),
       token(' ', TokenKind.Whitespace),
       token('"c3"', TokenKind.AttrValueDq),
       token(' ', TokenKind.Whitespace),
-      token('\'d4\'', TokenKind.AttrValueSq),
+      token("'d4'", TokenKind.AttrValueSq),
       token('e5', TokenKind.AttrValueNq),
       token(' ', TokenKind.Whitespace),
-      token('\'f6"\'', TokenKind.AttrValueSq),
+      token("'f6\"'", TokenKind.AttrValueSq),
       token(' ', TokenKind.Whitespace),
       token('"g7\'"', TokenKind.AttrValueDq),
       token('', TokenKind.OpenTagEnd),
@@ -85,7 +79,8 @@ const cases: ICase[] = [
   },
   {
     name: 'attribute values',
-    input: '<div a b= c=1 d e = f = g \'h\'=i "j"k=lmn o=\'pq\' r="st"u>M</div>',
+    input:
+      '<div a b= "c=1" d e = "f" = g \'h\'=i "j"k=lmn o=\'pq\' r="st"u>M</div>',
     tokens: [
       token('div', TokenKind.OpenTag, 1),
       token(' ', TokenKind.Whitespace),
@@ -110,7 +105,7 @@ const cases: ICase[] = [
       token(' ', TokenKind.Whitespace),
       token('g', TokenKind.AttrValueNq),
       token(' ', TokenKind.Whitespace),
-      token('\'h\'', TokenKind.AttrValueSq),
+      token("'h'", TokenKind.AttrValueSq),
       token('=', TokenKind.AttrValueEq),
       token('i', TokenKind.AttrValueNq),
       token(' ', TokenKind.Whitespace),
@@ -121,7 +116,7 @@ const cases: ICase[] = [
       token(' ', TokenKind.Whitespace),
       token('o', TokenKind.AttrValueNq),
       token('=', TokenKind.AttrValueEq),
-      token('\'pq\'', TokenKind.AttrValueSq),
+      token("'pq'", TokenKind.AttrValueSq),
       token(' ', TokenKind.Whitespace),
       token('r', TokenKind.AttrValueNq),
       token('=', TokenKind.AttrValueEq),
@@ -145,17 +140,12 @@ const cases: ICase[] = [
   {
     name: 'unexpected eof end doctype',
     input: '<!doctype',
-    tokens: [
-      token('!doctype', TokenKind.OpenTag, 1),
-    ],
+    tokens: [token('!doctype', TokenKind.OpenTag, 1)],
   },
   {
     name: 'unexpected eof in doctype',
     input: '<!doctyp',
-    tokens: [
-      token('!', TokenKind.OpenTag, 1),
-      token('doctyp'),
-    ],
+    tokens: [token('!', TokenKind.OpenTag, 1), token('doctyp')],
   },
   {
     name: 'normal comment',
@@ -180,7 +170,8 @@ const cases: ICase[] = [
   },
   {
     name: 'open tag end',
-    input: '<a1><b2/><c3 /><d4  /   ><e5    f6/><g7     /h8><i9      /j10/><k11//>',
+    input:
+      '<a1><b2/><c3 /><d4  /   ><e5    f6/><g7     /h8><i9      /j10/><k11//>',
     tokens: [
       token('a1', TokenKind.OpenTag, 1),
       token('', TokenKind.OpenTagEnd),
@@ -256,13 +247,13 @@ const cases: ICase[] = [
       token('style ', TokenKind.CloseTag, index + 2),
     ],
   },
-]
+];
 
 describe('simple cases', () => {
   for (const _case of cases) {
     it(`case "${_case.name}"`, () => {
-      const tokens = tokenize(_case.input)
-      assert.deepEqual(tokens, _case.tokens)
-    })
+      const tokens = tokenize(_case.input);
+      assert.deepEqual(tokens, _case.tokens);
+    });
   }
-})
+});

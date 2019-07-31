@@ -8,63 +8,78 @@
  * @desc parse.ts
  */
 
-import { ANY, noNestedTags, selfCloseTags } from './config'
-import { IToken, tokenize, TokenKind } from './tokenize'
-import { IAttribute, IAttributeValue, INode, ITag, IText, SyntaxKind } from './types'
-import { getLineRanges, getPosition } from './utils'
+import { ANY, noNestedTags, selfCloseTags } from './config';
+import { IToken, tokenize, TokenKind } from './tokenize';
+import {
+  IAttribute,
+  IAttributeValue,
+  INode,
+  ITag,
+  IText,
+  SyntaxKind,
+} from './types';
+import { getLineRanges, getPosition } from './utils';
 
 interface IContext {
   parent: IContext | void;
   tag: ITag;
 }
 
-let index: number
-let count: number
-let tokens: IToken[]
-let tagChain: IContext | void
-let nodes: INode[]
-let token: IToken
-let node: IText | void
-let buffer: string
-let lines: number[] | void
+let index: number;
+let count: number;
+let tokens: IToken[];
+let tagChain: IContext | void;
+let nodes: INode[];
+let token: IToken;
+let node: IText | void;
+let buffer: string;
+let lines: number[] | void;
 
 function init(input?: string) {
   if (input === void 0) {
-    count         = 0
-    tokens.length = 0
-    buffer        = ''
+    count = 0;
+    tokens.length = 0;
+    buffer = '';
   } else {
-    tokens = tokenize(input)
-    count  = tokens.length
-    buffer = input
+    tokens = tokenize(input);
+    count = tokens.length;
+    buffer = input;
   }
-  index    = 0
-  tagChain = void 0
-  nodes    = []
-  token    = void 0 as any
-  node     = void 0
-  lines    = void 0
+  index = 0;
+  tagChain = void 0;
+  nodes = [];
+  token = void 0 as any;
+  node = void 0;
+  lines = void 0;
 }
 
 function pushNode(_node: ITag | IText) {
   if (!tagChain) {
-    nodes.push(_node)
-  } else if (_node.type === SyntaxKind.Tag && _node.name === tagChain.tag.name && noNestedTags[_node.name]) {
-    tagChain = tagChain.parent
-    pushNode(_node)
+    nodes.push(_node);
+  } else if (
+    _node.type === SyntaxKind.Tag &&
+    _node.name === tagChain.tag.name &&
+    noNestedTags[_node.name]
+  ) {
+    tagChain = tagChain.parent;
+    pushNode(_node);
   } else if (tagChain.tag.body) {
-    tagChain.tag.end = _node.end
-    tagChain.tag.body.push(_node)
+    tagChain.tag.end = _node.end;
+    tagChain.tag.body.push(_node);
   }
 }
 
 function pushTagChain(tag: ITag) {
-  tagChain = { parent: tagChain, tag: tag }
-  node     = void 0
+  tagChain = { parent: tagChain, tag: tag };
+  node = void 0;
 }
 
-function createLiteral(start = token.start, end = token.end, value = token.value): IText {
-  return { start, end, value, type: SyntaxKind.Text }
+function createLiteral(
+  start = token.start,
+  end = token.end,
+  value = token.value,
+): IText {
+  return { start, end, value, type: SyntaxKind.Text };
 }
 
 function createTag(): ITag {
@@ -77,7 +92,7 @@ function createTag(): ITag {
     attributes: [],
     body: null,
     close: null,
-  }
+  };
 }
 
 function createAttribute(): IAttribute {
@@ -86,167 +101,184 @@ function createAttribute(): IAttribute {
     end: token.end,
     name: createLiteral(),
     value: void 0,
-  }
+  };
 }
 
 function createAttributeValue(): IAttributeValue {
   return {
     start: token.start,
     end: token.end,
-    value: token.type === TokenKind.AttrValueNq
-      ? token.value
-      : token.value.substr(1, token.value.length - 2),
-    quote: token.type === TokenKind.AttrValueNq ? void 0 : token.type === TokenKind.AttrValueSq ? '\'' : '"',
-  }
+    value:
+      token.type === TokenKind.AttrValueNq
+        ? token.value
+        : token.value.substr(1, token.value.length - 2),
+    quote:
+      token.type === TokenKind.AttrValueNq
+        ? void 0
+        : token.type === TokenKind.AttrValueSq
+        ? "'"
+        : '"',
+  };
 }
 
 function appendLiteral(_node: IText = node as IText) {
-  _node.value += token.value
-  _node.end = token.end
+  _node.value += token.value;
+  _node.end = token.end;
 }
 
 function unexpected() {
   if (lines === void 0) {
-    lines = getLineRanges(buffer)
+    lines = getLineRanges(buffer);
   }
-  const [line, column] = getPosition(lines, token.start)
+  const [line, column] = getPosition(lines, token.start);
   throw new Error(
-    `Unexpected token "${token.value}(${token.type})" at [${line},${column}]`
-    + (tagChain ? ` when parsing tag: ${JSON.stringify(tagChain.tag.name)}.` : ''),
-  )
+    `Unexpected token "${token.value}(${token.type})" at [${line},${column}]` +
+      (tagChain
+        ? ` when parsing tag: ${JSON.stringify(tagChain.tag.name)}.`
+        : ''),
+  );
 }
 
 function parseOpenTag() {
-  let state: 0 /* before attr */ | 1 /* in name */ | 2 /* after name */ | 3 /* after = */ | 4 /* in value */ = 0
+  let state:
+    | 0 /* before attr */
+    | 1 /* in name */
+    | 2 /* after name */
+    | 3 /* after = */
+    | 4 /* in value */ = 0;
 
-  let attr: IAttribute = ANY
+  let attr: IAttribute = ANY;
 
-  const tag = createTag()
-  pushNode(tag)
+  const tag = createTag();
+  pushNode(tag);
   if (tag.name === '' || tag.name === '!' || tag.name === '!--') {
-    tag.open.value = '<' + tag.open.value
+    tag.open.value = '<' + tag.open.value;
     if (index === count) {
-      return
+      return;
     } else {
-      token = tokens[++index]
+      token = tokens[++index];
       if (token.type !== TokenKind.OpenTagEnd) {
-        node     = createLiteral()
-        tag.body = [node]
+        node = createLiteral();
+        tag.body = [node];
         while (++index < count) {
-          token = tokens[index]
+          token = tokens[index];
           if (token.type === TokenKind.OpenTagEnd) {
-            break
+            break;
           }
-          appendLiteral()
+          appendLiteral();
         }
       }
-      tag.close = createLiteral(token.start, token.end + 1, `${token.value}>`)
-      tag.end   = tag.close.end
+      tag.close = createLiteral(token.start, token.end + 1, `${token.value}>`);
+      tag.end = tag.close.end;
     }
-    return
+    return;
   }
   while (++index < count) {
-    token = tokens[index]
+    token = tokens[index];
     if (token.type === TokenKind.OpenTagEnd) {
-      tag.end = tag.open.end = token.end + 1
-      tag.open.value = buffer.substring(tag.open.start, tag.open.end)
+      tag.end = tag.open.end = token.end + 1;
+      tag.open.value = buffer.substring(tag.open.start, tag.open.end);
       if (token.value === '' && !selfCloseTags[tag.name]) {
-        tag.body = []
-        pushTagChain(tag)
+        tag.body = [];
+        pushTagChain(tag);
       } else {
-        tag.body = void 0
+        tag.body = void 0;
       }
-      break
+      break;
     } else if (state === 0) {
       if (token.type !== TokenKind.Whitespace) {
-        attr  = createAttribute()
-        state = 1
-        tag.attributes.push(attr)
+        attr = createAttribute();
+        state = 1;
+        tag.attributes.push(attr);
       }
     } else if (state === 1) {
       if (token.type === TokenKind.Whitespace) {
-        state = 2
+        state = 2;
       } else if (token.type === TokenKind.AttrValueEq) {
-        state = 3
+        state = 3;
       } else {
-        appendLiteral(attr.name)
+        appendLiteral(attr.name);
       }
     } else if (state === 2) {
       if (token.type !== TokenKind.Whitespace) {
         if (token.type === TokenKind.AttrValueEq) {
-          state = 3
+          state = 3;
         } else {
-          attr  = createAttribute()
-          state = 1
-          tag.attributes.push(attr)
+          attr = createAttribute();
+          state = 1;
+          tag.attributes.push(attr);
         }
       }
     } else if (state === 3) {
       if (token.type !== TokenKind.Whitespace) {
-        attr.value = createAttributeValue()
+        attr.value = createAttributeValue();
         if (token.type === TokenKind.AttrValueNq) {
-          state = 4
+          state = 4;
         } else {
-          attr.end = attr.value.end
-          state    = 0
+          attr.end = attr.value.end;
+          state = 0;
         }
       }
     } else {
       if (token.type === TokenKind.Whitespace) {
-        attr.end = (attr.value as IAttributeValue).end
-        state    = 0
+        attr.end = (attr.value as IAttributeValue).end;
+        state = 0;
       } else {
-        appendLiteral(attr.value as any)
+        appendLiteral(attr.value as any);
       }
     }
   }
 }
 
 function parseCloseTag() {
-  let _context: IContext | void = tagChain
+  let _context: IContext | void = tagChain;
   while (true) {
     if (!_context || token.value.startsWith(_context.tag.name)) {
-      break
+      break;
     }
-    _context = _context.parent
+    _context = _context.parent;
   }
   if (!_context) {
-    return
+    return;
   }
-  _context.tag.close = createLiteral(token.start - 2, token.end + 1, `</${token.value}>`)
-  _context.tag.end   = _context.tag.close.end
-  _context           = _context.parent
-  tagChain           = _context
+  _context.tag.close = createLiteral(
+    token.start - 2,
+    token.end + 1,
+    `</${token.value}>`,
+  );
+  _context.tag.end = _context.tag.close.end;
+  _context = _context.parent;
+  tagChain = _context;
 }
 
 export function parse(input: string): INode[] {
-  init(input)
+  init(input);
   while (index < count) {
-    token = tokens[index]
+    token = tokens[index];
     switch (token.type) {
       case TokenKind.Literal:
         if (!node) {
-          node = createLiteral()
-          pushNode(node)
+          node = createLiteral();
+          pushNode(node);
         } else {
-          appendLiteral(node)
+          appendLiteral(node);
         }
-        break
+        break;
       case TokenKind.OpenTag:
-        node = void 0
-        parseOpenTag()
-        break
+        node = void 0;
+        parseOpenTag();
+        break;
       case TokenKind.CloseTag:
-        node = void 0
-        parseCloseTag()
-        break
+        node = void 0;
+        parseCloseTag();
+        break;
       default:
-        unexpected()
-        break
+        unexpected();
+        break;
     }
-    index++
+    index++;
   }
-  const _nodes = nodes
-  init()
-  return _nodes
+  const _nodes = nodes;
+  init();
+  return _nodes;
 }

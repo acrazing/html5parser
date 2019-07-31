@@ -10,7 +10,7 @@
 
 export enum SyntaxKind {
   Text = 'Text',
-  Tag  = 'Tag',
+  Tag = 'Tag',
 }
 
 export interface IBaseNode {
@@ -25,7 +25,7 @@ export interface IText extends IBaseNode {
 
 export interface IAttributeValue extends IBaseNode {
   value: string;
-  quote: '\'' | '"' | void;
+  quote: "'" | '"' | void;
 }
 
 export interface IAttribute extends IBaseNode {
@@ -38,12 +38,8 @@ export interface ITag extends IBaseNode {
   open: IText;
   name: string;
   attributes: IAttribute[];
-  body: Array<ITag | IText> // with close tag
-    | void // self closed
-    | null; // eof before open tag end
-  close: IText // with close tag
-    | void // self closed
-    | null; // eof before open tag end or without close tag for not self closed tag
+  body: Array<ITag | IText> | void | null; // with close tag // self closed // eof before open tag end
+  close: IText | void | null; // with close tag // self closed // eof before open tag end or without close tag for not self closed tag
 }
 
-export type INode = IText | ITag
+export type INode = IText | ITag;
