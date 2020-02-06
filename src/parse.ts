@@ -19,6 +19,7 @@ import {
   SyntaxKind,
 } from './types';
 import { getLineRanges, getPosition } from './utils';
+import { walk } from './walk';
 
 interface IContext {
   parent: IContext | undefined;
@@ -150,11 +151,9 @@ function unexpected() {
 }
 
 function buildAttributeMap(tag: ITag) {
-  if (parseOptions!.setAttributeMap) {
-    tag.attributeMap = {};
-    for (const attr of tag.attributes) {
-      tag.attributeMap[attr.name.value] = attr;
-    }
+  tag.attributeMap = {};
+  for (const attr of tag.attributes) {
+    tag.attributeMap[attr.name.value] = attr;
   }
 }
 
@@ -206,7 +205,6 @@ function parseOpenTag() {
       } else {
         tag.body = void 0;
       }
-      buildAttributeMap(tag);
       break;
     } else if (state === OpenTagState.BeforeAttr) {
       if (token.type !== TokenKind.Whitespace) {
@@ -305,6 +303,15 @@ export function parse(input: string, options?: ParseOptions): INode[] {
     index++;
   }
   const _nodes = nodes;
+  if (parseOptions?.setAttributeMap) {
+    walk(_nodes, {
+      enter(node: IText | ITag): void {
+        if (node.type === SyntaxKind.Tag) {
+          buildAttributeMap(node);
+        }
+      },
+    });
+  }
   init();
   return _nodes;
 }

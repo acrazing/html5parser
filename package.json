@@ -1,7 +1,7 @@
 {
   "name": "html5parser",
   "description": "A fast, accurate AST parser for HTML5",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "acrazing <joking.young@gmail.com>",
   "keywords": [
     "html5",
