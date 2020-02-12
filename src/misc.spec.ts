@@ -8,24 +8,24 @@
  * @desc misc.spec.ts
  */
 
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 import fetch from 'node-fetch';
 import * as path from 'path';
 import { parse } from './parse';
 
 function run(url: string) {
   const id = url.replace(/[^\w\d]+/g, '_').replace(/^_+|_+$/g, '');
-  console.log('Parsing %s', url);
   return fetch(url)
     .then((r) => r.text())
     .then((d) => {
-      fs.writeFileSync(path.join(process.cwd(), 'temp', `${id}.html`), d);
+      console.log('[FETCH:OK]: %s', url);
+      fs.outputFileSync(path.join(process.cwd(), 'temp', `${id}.html`), d);
+      console.time('parse:' + url);
       const ast = parse(d);
-      fs.writeFileSync(
-        path.join(process.cwd(), 'temp', `${id}.json`),
-        JSON.stringify(ast, void 0, 2),
-      );
-      console.log('[OK]: %s, %s', id, url);
+      console.timeEnd('parse:' + url);
+      fs.outputJSONSync(path.join(process.cwd(), 'temp', `${id}.json`), ast, {
+        spaces: 2,
+      });
     })
     .catch((err) => {
       console.error('[ERR]: %s, %s', id, err.message);
@@ -33,9 +33,9 @@ function run(url: string) {
 }
 
 const scenes = [
-  'https://github.com/',
-  'https://www.npmjs.com/',
-  'https://www.zhihu.com/',
+  'https://www.baidu.com/',
+  'https://www.qq.com/?fromdefault',
+  'https://www.taobao.com/',
 ];
 
 describe('real scenarios', () => {

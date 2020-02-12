@@ -38,6 +38,7 @@ function tag(
   body: INode[] | undefined | null,
   close: IText | undefined | null,
   start: number,
+  rawName = name,
 ): ITag {
   return {
     start: start,
@@ -45,6 +46,7 @@ function tag(
     type: SyntaxKind.Tag,
     open: open,
     name: name,
+    rawName: rawName,
     attributes: attributes,
     attributeMap: undefined,
     body: body,
@@ -360,6 +362,22 @@ const scenes: Array<{
         [text('</div></style', 7)],
         text('</style >', 20),
         0,
+      ),
+    ],
+  },
+  {
+    name: 'tag name',
+    input: '<DIV></DIV>',
+    nodes: [
+      tag(
+        '<DIV></DIV>',
+        'div',
+        text('<DIV>', 0),
+        [],
+        [],
+        text('</div>', 5),
+        0,
+        'DIV',
       ),
     ],
   },

@@ -99,6 +99,7 @@ function createTag(): ITag {
     type: SyntaxKind.Tag,
     open: createLiteral(token.start - 1), // not finished
     name: token.value,
+    rawName: buffer.substring(token.start, token.end),
     attributes: [],
     attributeMap: void 0,
     body: null,

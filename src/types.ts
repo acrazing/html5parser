@@ -37,6 +37,7 @@ export interface ITag extends IBaseNode {
   type: SyntaxKind.Tag;
   open: IText;
   name: string;
+  rawName: string;
   attributes: IAttribute[];
   // the attribute map, if `options.setAttributeMap` is `true`
   // this will be a Record, key is the attribute name literal,
