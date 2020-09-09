@@ -255,7 +255,7 @@ function parseOpenTag() {
 function parseCloseTag() {
   let _context = tagChain;
   while (true) {
-    if (!_context || token.value.startsWith(_context.tag.name)) {
+    if (!_context || token.value.trim() === _context.tag.name) {
       break;
     }
     _context = _context.parent;
@@ -266,7 +266,7 @@ function parseCloseTag() {
   _context.tag.close = createLiteral(
     token.start - 2,
     token.end + 1,
-    `</${token.value}>`,
+    buffer.substring(token.start - 2, token.end + 1),
   );
   _context.tag.end = _context.tag.close.end;
   _context = _context.parent;

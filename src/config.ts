@@ -12,13 +12,10 @@ function createMap<T>(
   keys: string,
   value: T,
 ): { [key: number]: T; [key: string]: T } {
-  return keys.split(',').reduce(
-    (pre, now) => {
-      pre[now] = value;
-      return pre;
-    },
-    {} as any,
-  );
+  return keys.split(',').reduce((pre, now) => {
+    pre[now] = value;
+    return pre;
+  }, Object.create(null));
 }
 
 export const selfCloseTags = createMap<true>(

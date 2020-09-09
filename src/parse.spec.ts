@@ -19,9 +19,9 @@ import {
   SyntaxKind,
 } from './types';
 
-let index = 0;
+export let index = 0;
 
-function text(input: string, start = index): IText {
+export function text(input: string, start = index): IText {
   return {
     type: SyntaxKind.Text,
     start: start,
@@ -30,7 +30,7 @@ function text(input: string, start = index): IText {
   };
 }
 
-function tag(
+export function tag(
   input: string,
   name: string,
   open: IText,
@@ -375,7 +375,7 @@ const scenes: Array<{
         text('<DIV>', 0),
         [],
         [],
-        text('</div>', 5),
+        text('</DIV>', 5),
         0,
         'DIV',
       ),

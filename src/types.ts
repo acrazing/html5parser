@@ -35,8 +35,11 @@ export interface IAttribute extends IBaseNode {
 
 export interface ITag extends IBaseNode {
   type: SyntaxKind.Tag;
+  // original open tag, <Div id="id">
   open: IText;
+  // lower case tag name, div
   name: string;
+  // original case tag name, Div
   rawName: string;
   attributes: IAttribute[];
   // the attribute map, if `options.setAttributeMap` is `true`
@@ -47,6 +50,7 @@ export interface ITag extends IBaseNode {
     | Array<ITag | IText> // with close tag
     | undefined // self closed
     | null; // EOF before open tag end
+  // original close tag, </DIV >
   close:
     | IText // with close tag
     | undefined // self closed
