@@ -1,6 +1,6 @@
 # html5parser
 
-A simple and fast html5 parser, the result could be manipulated like
+A very tiny and fast html5 AST parser, the result could be manipulated like
 ECMAScript ESTree, especially about the attributes.
 
 ## Introduction
@@ -76,6 +76,20 @@ export function tokenize(input: string): IToken[];
 
 // Utils API, walk the ast tree
 export function walk(ast: INode[], options: IWalkOptions): void;
+
+// get safe html, remove danger tag/attributes with whitelist
+export function safeHtml(
+  html: string,
+  options?: Partial<SafeHtmlOptions>,
+): string;
+
+// you can get default value of the options at ./src/safeHtml.ts
+export interface SafeHtmlOptions {
+  allowedTags: string[];
+  allowedAttrs: string[];
+  tagAllowedAttrs: Record<string, string[]>;
+  allowedUrl: RegExp;
+}
 ```
 
 ## Abstract Syntax Tree Spec

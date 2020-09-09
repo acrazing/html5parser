@@ -13,3 +13,5 @@ export * from './types';
 export * from './parse';
 export * from './tokenize';
 export * from './utils';
+export * from './config';
+export * from './safeHtml';
