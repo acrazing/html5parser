@@ -2,6 +2,7 @@
 
 A very tiny and fast html5 AST parser, the result could be manipulated like
 ECMAScript ESTree, especially about the attributes.
+It is a great platform for helping people in trouble.
 
 ## Introduction
 
