@@ -1,16 +1,7 @@
 node_modules/
 .cache/
-build/
 temp/
-esm/
-cjs/
-lib/
 *.log
-local.*
-local-*
-*.local
-*.local.*
-/.env.development
 .DS_Store
 .DS_Store*
 *~
@@ -20,3 +11,4 @@ local-*
 *.tgz
 .idea/
 .vscode/
+dist/

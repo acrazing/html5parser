@@ -6,6 +6,8 @@
  * @since 2017-08-19 14:15:25
  * @version 1.0.0
  * @desc tokenize.spec.ts
+ *
+ * @formatter:off
  */
 
 import * as assert from 'assert';
@@ -19,11 +21,7 @@ interface ICase {
 
 export let tokenIndex = 0;
 
-export function token(
-  value: string,
-  type: TokenKind = TokenKind.Literal,
-  start = tokenIndex,
-) {
+export function token(value: string, type: TokenKind = TokenKind.Literal, start = tokenIndex) {
   const v = {
     start: start,
     end: start + value.length,
@@ -79,8 +77,7 @@ const cases: ICase[] = [
   },
   {
     name: 'attribute values',
-    input:
-      '<div a b= c=1 d e = f = g \'h\'=i "j"k=lmn o=\'pq\' r="st"u>M</div>',
+    input: '<div a b= c=1 d e = f = g \'h\'=i "j"k=lmn o=\'pq\' r="st"u>M</div>',
     tokens: [
       token('div', TokenKind.OpenTag, 1),
       token(' ', TokenKind.Whitespace),
@@ -170,8 +167,7 @@ const cases: ICase[] = [
   },
   {
     name: 'open tag end',
-    input:
-      '<a1><b2/><c3 /><d4  /   ><e5    f6/><g7     /h8><i9      /j10/><k11//>',
+    input: '<a1><b2/><c3 /><d4  /   ><e5    f6/><g7     /h8><i9      /j10/><k11//>',
     tokens: [
       token('a1', TokenKind.OpenTag, 1),
       token('', TokenKind.OpenTagEnd),

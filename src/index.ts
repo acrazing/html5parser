@@ -8,10 +8,8 @@
  * @desc index.ts
  */
 
-export * from './walk';
-export * from './types';
-export * from './parse';
-export * from './tokenize';
-export * from './utils';
-export * from './config';
-export * from './safeHtml';
+export { SyntaxKind, IBaseNode, IAttributeValue, IAttribute, ITag, IText, INode } from './types';
+export { TokenKind, IToken, tokenize } from './tokenize';
+export { ParseOptions, parse } from './parse';
+export { WalkOptions, walk } from './walk';
+export { SafeHtmlOptions, safeHtmlDefaultOptions, safeHtml } from './safeHtml';

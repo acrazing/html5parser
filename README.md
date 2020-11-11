@@ -1,165 +1,253 @@
 # html5parser
 
-A very tiny and fast html5 AST parser, the result could be manipulated like
-ECMAScript ESTree, especially about the attributes.
-It is a great platform for helping people in trouble.
+`html5parser` is a super fast and tiny **HTML5** parser.
 
-## Introduction
+## Highlights
 
-Currently, all the public parsers, like `htmlparser2`, `parser5`, etc,
-could not be used for manipulate attributes. For example: the `htmlparser2`
-has `startIndex` and `endIndex` for tags and texts, but no range information
-about attribute name and values. This project is used for resolve this problem.
-Just added ranges for tags, texts, and attribute name and values, and else,
-with the information of attribute quote type, (without or with `'`/`"`).
+- **[Fast](#benchmark)**: maybe the fastest one you can find on GitHub.
+- **Tiny**: the fully packaged bundle size is less than `5kb`.
+- **Cross platform**: works in the modern browsers and Node.js.
+- **[HTML5 only](#warnings)**: any thing not in the specification will be ignored.
+- **Accurate**: every token could be located in source file.
 
-## Install
+## Table of Contents
 
-```bash
-# var npm
-npm install html5parser -S
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [API Reference](#api-reference)
+  - Core
+  - [tokenize()](#tokenizeinput)
+  - [parse()](#parseinput)
+  - Utilities
+  - [walk()](#walkast-options)
+  - [safeHtml()](#safehtmlinput)
+    - [safeHtmlDefaultOptions](#safehtmldefaultoptions)
+- [Warnings](#warnings)
+- [Benchmark](#benchmark)
 
-# var yarn
-yarn add html5parser
-```
+## Installation
 
-## Quick Start
+1. Package manager
 
-```ts
-import * as html from 'html5parser';
+   ```bash
+   npm i -S html5parser
 
-const input = `
-<!DOCTYPE html>
-<html>
-  <body>
-    <h1 id="hello">Hello world</h1>
-  </body>
-</html>
-`;
+   # or var yarn
+   yarn add html5parser
+   ```
 
-const ast = html.parse(input);
+2. CDN
 
-html.walk(ast, {
+   ```html
+   <script src="https://unpkg.com/html5parser@latest/dist/html5parser.umd.js"></script>
+   ```
+
+## Quick start
+
+[![Edit html5parser - quick start](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/keen-wind-2mpwr?fontsize=14&hidenavigation=1&theme=dark)
+
+```typescript jsx
+import { parse, walk, SyntaxKind } from 'html5parser';
+
+const ast = parse('<!DOCTYPE html><head><title>Hello html5parser!</title></head></html>');
+
+walk(ast, {
   enter: (node) => {
-    if (node.type === html.SyntaxKind.Tag) {
-      for (const attr of node.attributes) {
-        if (attr.value !== void 0) {
-          // This is used for present the ranges of attributes.
-          console.log(input.substring(attr.value.start, attr.value.end));
-          // you can get the value directly:
-          console.log(attr.value.value);
-        }
+    if (node.type === SyntaxKind.Tag && node.name === 'title' && Array.isArray(node.body)) {
+      const text = node.body[0];
+      if (text.type !== SyntaxKind.Text) {
+        return;
       }
+      const div = document.createElement('div');
+      div.innerHTML = `The title of the input is <strong>${text.value}</strong>`;
+      document.body.appendChild(div);
     }
   },
 });
-
-// Should output:
-// hello
 ```
 
-## API
+## API Reference
 
-```ts
-// Top level API, parse html to ast tree
-export function parse(input: string, options?: ParseOptions): INode[];
+### tokenize(input)
 
-export interface ParseOptions {
-  // create tag's attributes map
-  // if true, will set ITag.attributeMap property
-  // as a `Record<string, IAttribute>`
-  // see {ITag#attributeMap} bellow
-  setAttributeMap: boolean;
-}
+Low level API to parse string to tokens:
 
-// Low level API, get tokens
-export function tokenize(input: string): IToken[];
-
-// Utils API, walk the ast tree
-export function walk(ast: INode[], options: IWalkOptions): void;
-
-// get safe html, remove danger tag/attributes with whitelist
-export function safeHtml(
-  html: string,
-  options?: Partial<SafeHtmlOptions>,
-): string;
-
-// you can get default value of the options at ./src/safeHtml.ts
-export interface SafeHtmlOptions {
-  allowedTags: string[];
-  allowedAttrs: string[];
-  tagAllowedAttrs: Record<string, string[]>;
-  allowedUrl: RegExp;
-}
+```typescript jsx
+function tokenize(input: string): IToken[];
 ```
 
-## Abstract Syntax Tree Spec
+- `IToken`
 
-1. `IBaseNode`: the base struct for all the nodes:
+  ```typescript jsx
+  interface IToken {
+    start: number;
+    end: number;
+    value: string;
+    type: TokenKind;
+  }
+  ```
 
-   ```ts
-   export interface IBaseNode {
-     start: number; // the start position of the node (include)
-     end: number; // the end position of the node (exclude)
-   }
-   ```
+- `TokenKind`
 
-2. `IText`: The text node struct:
+  ```typescript jsx
+  const enum TokenKind {
+    Literal,
+    OpenTag, // trim leading '<'
+    OpenTagEnd, // trim tailing '>', only could be '/' or ''
+    CloseTag, // trim leading '</' and tailing '>'
+    Whitespace, // the whitespace between attributes
+    AttrValueEq,
+    AttrValueNq,
+    AttrValueSq,
+    AttrValueDq,
+  }
+  ```
 
-   ```ts
-   export interface IText extends IBaseNode {
-     type: SyntaxKind.Text;
-     value: string; // text value
-   }
-   ```
+### parse(input)
 
-3. `ITag`: The tag node struct
+Core API to parse string to AST:
 
-   ```ts
-   export interface ITag extends IBaseNode {
-     type: SyntaxKind.Tag;
-     open: IText;
-     name: string;
-     attributes: IAttribute[];
-     // the attribute map, if `options.setAttributeMap` is `true`
-     // this will be a Record, key is the attribute name literal,
-     // value is the attribute self.
-     attributeMap: Record<string, IAttribute> | undefined;
-     body:
-       | Array<ITag | IText> // with close tag
-       | undefined // self closed
-       | null; // EOF before open tag end
-     close:
-       | IText // with close tag
-       | undefined // self closed
-       | null; // EOF before end or without close tag
-   }
-   ```
+```typescript jsx
+function parse(input: string, options?: ParseOptions): INode[];
+```
 
-4. `IAttribute`: the attribute struct:
+- `ParseOptions`
 
-   ```ts
-   export interface IAttribute extends IBaseNode {
-     name: IText; // the name of the attribute
-     value: IAttributeValue | void; // the value of the attribute
-   }
-   ```
+  ```typescript jsx
+  interface ParseOptions {
+    // create tag's attributes map
+    // if true, will set ITag.attributeMap property
+    // as a `Record<string, IAttribute>`
+    setAttributeMap: boolean;
+  }
+  ```
 
-5. `IAttributeValue`: the attribute value struct:
+- `INode`
 
-   ```ts
-   // NOTE: the range start and end contains quotes.
-   export interface IAttributeValue extends IBaseNode {
-     value: string; // the value text, exclude leading and tailing `'` or `"`
-     quote: "'" | '"' | void; // the quote type
-   }
-   ```
+  ```typescript jsx
+  export type INode = IText | ITag;
+  ```
 
-6. `INode`: the exposed nodes:
+- `ITag`
 
-   ```ts
-   export type INode = ITag | IText;
-   ```
+  ```typescript jsx
+  export interface ITag extends IBaseNode {
+    type: SyntaxKind.Tag;
+    // original open tag, <Div id="id">
+    open: IText;
+    // lower case tag name, div
+    name: string;
+    // original case tag name, Div
+    rawName: string;
+    attributes: IAttribute[];
+    // the attribute map, if `options.setAttributeMap` is `true`
+    // this will be a Record, key is the attribute name literal,
+    // value is the attribute self.
+    attributeMap: Record<string, IAttribute> | undefined;
+    body:
+      | Array<ITag | IText> // with close tag
+      | undefined // self closed
+      | null; // EOF before open tag end
+    // original close tag, </DIV >
+    close:
+      | IText // with close tag
+      | undefined // self closed
+      | null; // EOF before end or without close tag
+  }
+  ```
+
+- `IAttribute`
+
+  ```typescript jsx
+  export interface IAttribute extends IBaseNode {
+    name: IText;
+    value: IAttributeValue | undefined;
+  }
+  ```
+
+- `IAttributeValue`
+
+  ```typescript jsx
+  export interface IAttributeValue extends IBaseNode {
+    value: string;
+    quote: "'" | '"' | undefined;
+  }
+  ```
+
+- `IText`
+
+  ```typescript jsx
+  export interface IText extends IBaseNode {
+    type: SyntaxKind.Text;
+    value: string;
+  }
+  ```
+
+- `IBaseNode`
+
+  ```typescript jsx
+  export interface IBaseNode {
+    start: number;
+    end: number;
+  }
+  ```
+
+- `SyntaxKind`
+
+  ```typescript jsx
+  export enum SyntaxKind {
+    Text = 'Text',
+    Tag = 'Tag',
+  }
+  ```
+
+### walk(ast, options)
+
+Visit all the nodes of the AST with specified callbacks:
+
+```typescript jsx
+function walk(ast: INode[], options: WalkOptions): void;
+```
+
+- `IWalkOptions`
+
+  ```typescript jsx
+  export interface IWalkOptions {
+    enter?(node: INode, parent: INode | void, index: number): void;
+    leave?(node: INode, parent: INode | void, index: number): void;
+  }
+  ```
+
+### safeHtml(input)
+
+Parse input to AST and keep the tags and attributes by whitelists, and then
+print it to a string.
+
+```typescript jsx
+function safeHtml(input: string, options?: Partial<SafeHtmlOptions>): string;
+```
+
+<a name="safehtmloptions"></a>
+
+- `SafeHtmlOptions`
+
+  ```typescript jsx
+  export interface SafeHtmlOptions {
+    allowedTags: string[];
+    allowedAttrs: string[];
+    tagAllowedAttrs: Record<string, string[]>;
+    allowedUrl: RegExp;
+  }
+  ```
+
+#### safeHtmlDefaultOptions
+
+The default options of [`safeHtml`](#safehtmlinput), you can modify it, its
+effect is global.
+
+```typescript jsx
+const safeHtmlDefaultOptions: SafeHtmlOptions;
+```
 
 ## Warnings
 
@@ -211,4 +299,26 @@ sax                : 10.2110 ms/file ± 13.5204
 
 ## License
 
-[MIT](./LICENSE)
+```
+The MIT License (MIT)
+
+Copyright (c) 2020 acrazing
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

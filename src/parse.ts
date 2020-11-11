@@ -8,16 +8,9 @@
  * @desc parse.ts
  */
 
-import { ANY, noNestedTags, selfCloseTags } from './config';
+import { noNestedTags, selfCloseTags } from './config';
 import { IToken, tokenize, TokenKind } from './tokenize';
-import {
-  IAttribute,
-  IAttributeValue,
-  INode,
-  ITag,
-  IText,
-  SyntaxKind,
-} from './types';
+import { IAttribute, IAttributeValue, INode, ITag, IText, SyntaxKind } from './types';
 import { getLineRanges, getPosition } from './utils';
 import { walk } from './walk';
 
@@ -84,11 +77,7 @@ function pushTagChain(tag: ITag) {
   node = void 0;
 }
 
-function createLiteral(
-  start = token.start,
-  end = token.end,
-  value = token.value,
-): IText {
+function createLiteral(start = token.start, end = token.end, value = token.value): IText {
   return { start, end, value, type: SyntaxKind.Text };
 }
 
@@ -145,9 +134,7 @@ function unexpected() {
   const [line, column] = getPosition(lines, token.start);
   throw new Error(
     `Unexpected token "${token.value}(${token.type})" at [${line},${column}]` +
-      (tagChain
-        ? ` when parsing tag: ${JSON.stringify(tagChain.tag.name)}.`
-        : ''),
+      (tagChain ? ` when parsing tag: ${JSON.stringify(tagChain.tag.name)}.` : ''),
   );
 }
 
@@ -169,7 +156,7 @@ const enum OpenTagState {
 function parseOpenTag() {
   let state = OpenTagState.BeforeAttr;
 
-  let attr: IAttribute = ANY;
+  let attr: IAttribute = void 0 as any;
 
   const tag = createTag();
   pushNode(tag);

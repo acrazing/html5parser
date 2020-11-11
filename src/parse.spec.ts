@@ -10,14 +10,7 @@
 
 import * as assert from 'assert';
 import { parse } from './parse';
-import {
-  IAttribute,
-  IAttributeValue,
-  INode,
-  ITag,
-  IText,
-  SyntaxKind,
-} from './types';
+import { IAttribute, IAttributeValue, INode, ITag, IText, SyntaxKind } from './types';
 
 export let index = 0;
 
@@ -63,11 +56,7 @@ function attr(name: IText, value?: IAttributeValue): IAttribute {
   };
 }
 
-function value(
-  input: string,
-  quote: undefined | "'" | '"',
-  start = index,
-): IAttributeValue {
+function value(input: string, quote: undefined | "'" | '"', start = index): IAttributeValue {
   return {
     start: start,
     end: index = start + (quote === void 0 ? 0 : 2) + input.length,
@@ -94,9 +83,7 @@ const scenes: Array<{
   {
     name: 'single tag',
     input: '<div></div>',
-    nodes: [
-      tag('<div></div>', 'div', text('<div>', 0), [], [], text('</div>'), 0),
-    ],
+    nodes: [tag('<div></div>', 'div', text('<div>', 0), [], [], text('</div>'), 0)],
   },
   {
     name: 'tag attributes',
@@ -175,15 +162,7 @@ const scenes: Array<{
             52,
           ),
           text('\n  ', 77),
-          tag(
-            '<input />',
-            'input',
-            text('<input />', 80),
-            [],
-            void 0,
-            null,
-            80,
-          ),
+          tag('<input />', 'input', text('<input />', 80), [], void 0, null, 80),
           text('\n  ', 89),
           tag(
             `<div id="2">
@@ -257,15 +236,7 @@ const scenes: Array<{
         null,
         0,
       ),
-      tag(
-        '<html></html>',
-        'html',
-        text('<html>', 15),
-        [],
-        [],
-        text('</html>', 21),
-        15,
-      ),
+      tag('<html></html>', 'html', text('<html>', 15), [], [], text('</html>', 21), 15),
     ],
   },
   {
@@ -368,18 +339,7 @@ const scenes: Array<{
   {
     name: 'tag name',
     input: '<DIV></DIV>',
-    nodes: [
-      tag(
-        '<DIV></DIV>',
-        'div',
-        text('<DIV>', 0),
-        [],
-        [],
-        text('</DIV>', 5),
-        0,
-        'DIV',
-      ),
-    ],
+    nodes: [tag('<DIV></DIV>', 'div', text('<DIV>', 0), [], [], text('</DIV>', 5), 0, 'DIV')],
   },
 ];
 

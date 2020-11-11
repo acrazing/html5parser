@@ -8,34 +8,34 @@
  * @desc tokenize.ts
  */
 
-enum State {
-  Literal = 'Literal',
-  BeforeOpenTag = 'BeforeOpenTag',
-  OpeningTag = 'OpeningTag',
-  AfterOpenTag = 'AfterOpenTag',
-  InValueNq = 'InValueNq',
-  InValueSq = 'InValueSq',
-  InValueDq = 'InValueDq',
-  ClosingOpenTag = 'ClosingOpenTag',
-  OpeningSpecial = 'OpeningSpecial',
-  OpeningDoctype = 'OpeningDoctype',
-  OpeningNormalComment = 'OpeningNormalComment',
-  InNormalComment = 'InNormalComment',
-  InShortComment = 'InShortComment',
-  ClosingNormalComment = 'ClosingNormalComment',
-  ClosingTag = 'ClosingTag',
+const enum State {
+  Literal,
+  BeforeOpenTag,
+  OpeningTag,
+  AfterOpenTag,
+  InValueNq,
+  InValueSq,
+  InValueDq,
+  ClosingOpenTag,
+  OpeningSpecial,
+  OpeningDoctype,
+  OpeningNormalComment,
+  InNormalComment,
+  InShortComment,
+  ClosingNormalComment,
+  ClosingTag,
 }
 
-export enum TokenKind {
-  Literal = 'Literal',
-  OpenTag = 'OpenTag', // trim leading '<'
-  OpenTagEnd = 'OpenTagEnd', // trim tailing '>', only could be '/' or ''
-  CloseTag = 'CloseTag', // trim leading '</' and tailing '>'
-  Whitespace = 'Whitespace', // the whitespace between attributes
-  AttrValueEq = 'AttrValueEq',
-  AttrValueNq = 'AttrValueNq',
-  AttrValueSq = 'AttrValueSq',
-  AttrValueDq = 'AttrValueDq',
+export const enum TokenKind {
+  Literal,
+  OpenTag, // trim leading '<'
+  OpenTagEnd, // trim tailing '>', only could be '/' or ''
+  CloseTag, // trim leading '</' and tailing '>'
+  Whitespace, // the whitespace between attributes
+  AttrValueEq,
+  AttrValueNq,
+  AttrValueSq,
+  AttrValueDq,
 }
 
 export interface IToken {
@@ -74,27 +74,27 @@ const doctype = makeCodePoints('!doctype');
 const style = makeCodePoints('style');
 const script = makeCodePoints('script');
 
-enum Chars {
-  _S = ' '.charCodeAt(0),
-  _N = '\n'.charCodeAt(0),
-  _T = '\t'.charCodeAt(0),
-  _R = '\r'.charCodeAt(0),
-  _F = '\f'.charCodeAt(0),
-  Lt = '<'.charCodeAt(0),
-  Ep = '!'.charCodeAt(0),
-  Cl = '-'.charCodeAt(0),
-  Sl = '/'.charCodeAt(0),
-  Gt = '>'.charCodeAt(0),
-  Qm = '?'.charCodeAt(0),
-  La = 'a'.charCodeAt(0),
-  Lz = 'z'.charCodeAt(0),
-  Ua = 'A'.charCodeAt(0),
-  Uz = 'Z'.charCodeAt(0),
-  Eq = '='.charCodeAt(0),
-  Sq = "'".charCodeAt(0),
-  Dq = '"'.charCodeAt(0),
-  Ld = 'd'.charCodeAt(0),
-  Ud = 'D'.charCodeAt(0),
+const enum Chars {
+  _S = 32, // ' '
+  _N = 10, // \n
+  _T = 9, // \t
+  _R = 13, // \r
+  _F = 12, // \f
+  Lt = 60, // <
+  Ep = 33, // !
+  Cl = 45, // -
+  Sl = 47, // /
+  Gt = 62, // >
+  Qm = 63, // ?
+  La = 97, // a
+  Lz = 122, // z
+  Ua = 65, // A
+  Uz = 90, // Z
+  Eq = 61, // =
+  Sq = 39, // '
+  Dq = 34, // "
+  Ld = 100, // d
+  Ud = 68, //D
 }
 
 function isWhiteSpace() {
@@ -238,12 +238,7 @@ function emitToken(kind: TokenKind, newState = state, end = index) {
   if (kind === TokenKind.CloseTag) {
     inScript = inStyle = false;
   }
-  if (
-    !(
-      (kind === TokenKind.Literal || kind === TokenKind.Whitespace) &&
-      end === sectionStart
-    )
-  ) {
+  if (!((kind === TokenKind.Literal || kind === TokenKind.Whitespace) && end === sectionStart)) {
     // empty literal should be ignored
     tokens.push({ type: kind, start: sectionStart, end, value });
   }
@@ -273,10 +268,7 @@ function parseBeforeOpenTag() {
     }
     return;
   }
-  if (
-    (char >= Chars.La && char <= Chars.Lz) ||
-    (char >= Chars.Ua && char <= Chars.Uz)
-  ) {
+  if ((char >= Chars.La && char <= Chars.Lz) || (char >= Chars.Ua && char <= Chars.Uz)) {
     // <d
     state = State.OpeningTag;
     sectionStart = index;
@@ -502,8 +494,6 @@ function parseClosingTag() {
 
 function unexpected() {
   throw new SyntaxError(
-    `Unexpected token "${buffer.charAt(
-      index,
-    )}" at ${index} when parse ${state}`,
+    `Unexpected token "${buffer.charAt(index)}" at ${index} when parse ${state}`,
   );
 }
