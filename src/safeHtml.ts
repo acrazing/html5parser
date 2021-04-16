@@ -58,6 +58,7 @@ export const safeHtmlDefaultOptions: SafeHtmlOptions = {
     'img',
     'ins',
     'kbd',
+    'label',
     'li',
     'main',
     'map',
@@ -104,10 +105,7 @@ export const safeHtmlDefaultOptions: SafeHtmlOptions = {
   allowedUrl: /^(?:mailto|tel|https?|ftp|[^:]*[^a-z0-9.+-][^:]*):|^[^:]*$/i,
 };
 
-export function safeHtml(
-  input: string,
-  options: Partial<SafeHtmlOptions> = {},
-): string {
+export function safeHtml(input: string, options: Partial<SafeHtmlOptions> = {}): string {
   const config: SafeHtmlOptions = {
     ...safeHtmlDefaultOptions,
     ...options,
@@ -120,11 +118,7 @@ export function safeHtml(
   return stringify(ast, config, input);
 }
 
-function stringify(
-  ast: INode[],
-  config: SafeHtmlOptions,
-  input: string,
-): string {
+function stringify(ast: INode[], config: SafeHtmlOptions, input: string): string {
   return ast
     .map((node) => {
       if (node.type === SyntaxKind.Text) {
@@ -135,9 +129,7 @@ function stringify(
       }
       if (selfCloseTags[node.name]) {
         if (node.body !== void 0) {
-          throw new Error(
-            `self closed tag "${node.name}" should not have body`,
-          );
+          throw new Error(`self closed tag "${node.name}" should not have body`);
         }
       } else {
         if (!node.body || !node.close) {
