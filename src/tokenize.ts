@@ -3,6 +3,14 @@
  * @since 2017-08-19 00:54:29
  */
 
+import {
+  plainTextTags,
+  rawTextTags,
+  rcDataTags,
+  scriptDataTags,
+  scriptingRawTextTags,
+} from './config';
+
 const enum State {
   Literal,
   BeforeOpenTag,
@@ -19,6 +27,14 @@ const enum State {
   InShortComment,
   ClosingNormalComment,
   ClosingTag,
+}
+
+const enum TextMode {
+  Data,
+  RcData,
+  RawText,
+  ScriptData,
+  PlainText,
 }
 
 /**
@@ -85,6 +101,22 @@ export interface IToken {
   type: TokenKind;
 }
 
+/**
+ * Options that control tokenization.
+ */
+export interface TokenizeOptions {
+  /**
+   * Treat noscript content as RAWTEXT when true, matching HTML parsers with scripting enabled.
+   */
+  scriptingEnabled?: boolean;
+}
+
+interface ICodePoints {
+  lower: number[];
+  upper: number[];
+  length: number;
+}
+
 let state: State;
 let buffer: string;
 let bufSize: number;
@@ -92,11 +124,14 @@ let sectionStart: number;
 let index: number;
 let tokens: IToken[];
 let char: number;
-let inScript: boolean;
-let inStyle: boolean;
 let offset: number;
+let textMode: TextMode;
+let textEndTag: ICodePoints | undefined;
+let pendingTextMode: TextMode;
+let pendingTextTag: string;
+let tokenizeOptions: Required<TokenizeOptions>;
 
-function makeCodePoints(input: string) {
+function makeCodePoints(input: string): ICodePoints {
   return {
     lower: input
       .toLowerCase()
@@ -111,8 +146,6 @@ function makeCodePoints(input: string) {
 }
 
 const doctype = makeCodePoints('!doctype');
-const style = makeCodePoints('style');
-const script = makeCodePoints('script');
 
 const enum Chars {
   _S = 32, // ' '
@@ -148,23 +181,75 @@ function isWhiteSpace() {
   );
 }
 
-function init(input: string) {
+function init(input: string, options: Required<TokenizeOptions>) {
   state = State.Literal;
   buffer = input;
   bufSize = input.length;
   sectionStart = 0;
   index = 0;
   tokens = [];
-  inScript = false;
-  inStyle = false;
   offset = 0;
+  textMode = TextMode.Data;
+  textEndTag = void 0;
+  pendingTextMode = TextMode.Data;
+  pendingTextTag = '';
+  tokenizeOptions = options;
+}
+
+function getTextMode(tagName: string): TextMode {
+  if (rcDataTags.has(tagName)) {
+    return TextMode.RcData;
+  }
+  if (rawTextTags.has(tagName)) {
+    return TextMode.RawText;
+  }
+  if (scriptDataTags.has(tagName)) {
+    return TextMode.ScriptData;
+  }
+  if (plainTextTags.has(tagName)) {
+    return TextMode.PlainText;
+  }
+  if (tokenizeOptions.scriptingEnabled && scriptingRawTextTags.has(tagName)) {
+    return TextMode.RawText;
+  }
+  return TextMode.Data;
+}
+
+function setPendingTextMode(tagName: string) {
+  pendingTextTag = tagName;
+  pendingTextMode = getTextMode(tagName);
+}
+
+function activatePendingTextMode(openTagEnd: string) {
+  if (openTagEnd !== '/' && pendingTextMode !== TextMode.Data) {
+    textMode = pendingTextMode;
+    textEndTag = makeCodePoints(pendingTextTag);
+    if (pendingTextTag === 'textarea' && buffer.charCodeAt(sectionStart) === Chars._N) {
+      sectionStart++;
+      index++;
+    }
+  }
+  pendingTextMode = TextMode.Data;
+  pendingTextTag = '';
+}
+
+function resetTextMode() {
+  textMode = TextMode.Data;
+  textEndTag = void 0;
+}
+
+function resetTextClosingTag() {
+  sectionStart -= 2;
+  state = State.Literal;
 }
 
 /**
  * Convert an HTML string into a flat token stream.
  */
-export function tokenize(input: string): IToken[] {
-  init(input);
+export function tokenize(input: string, options: TokenizeOptions = {}): IToken[] {
+  init(input, {
+    scriptingEnabled: options.scriptingEnabled !== false,
+  });
   while (index < bufSize) {
     char = buffer.charCodeAt(index);
     switch (state) {
@@ -215,7 +300,6 @@ export function tokenize(input: string): IToken[] {
         break;
       default:
         unexpected();
-        break;
     }
     index++;
   }
@@ -262,7 +346,7 @@ export function tokenize(input: string): IToken[] {
       break;
   }
   const _tokens = tokens;
-  init('');
+  init('', tokenizeOptions);
   return _tokens;
 }
 
@@ -272,14 +356,10 @@ function emitToken(kind: TokenKind, newState = state, end = index) {
     value = value.toLowerCase();
   }
   if (kind === TokenKind.OpenTag) {
-    if (value === 'script') {
-      inScript = true;
-    } else if (value === 'style') {
-      inStyle = true;
-    }
+    setPendingTextMode(value);
   }
   if (kind === TokenKind.CloseTag) {
-    inScript = inStyle = false;
+    resetTextMode();
   }
   if (!((kind === TokenKind.Literal || kind === TokenKind.Whitespace) && end === sectionStart)) {
     // empty literal should be ignored
@@ -288,6 +368,9 @@ function emitToken(kind: TokenKind, newState = state, end = index) {
   if (kind === TokenKind.OpenTagEnd || kind === TokenKind.CloseTag) {
     sectionStart = end + 1;
     state = State.Literal;
+    if (kind === TokenKind.OpenTagEnd) {
+      activatePendingTextMode(value);
+    }
   } else {
     sectionStart = end;
     state = newState;
@@ -295,6 +378,9 @@ function emitToken(kind: TokenKind, newState = state, end = index) {
 }
 
 function parseLiteral() {
+  if (textMode === TextMode.PlainText) {
+    return;
+  }
   if (char === Chars.Lt) {
     // <
     emitToken(TokenKind.Literal, State.BeforeOpenTag);
@@ -302,7 +388,7 @@ function parseLiteral() {
 }
 
 function parseBeforeOpenTag() {
-  if (inScript || inStyle) {
+  if (textMode !== TextMode.Data) {
     if (char === Chars.Sl) {
       state = State.ClosingTag;
       sectionStart = index + 1;
@@ -499,35 +585,22 @@ function parseClosingNormalComment() {
 
 function parseClosingTag() {
   offset = index - sectionStart;
-  if (inStyle) {
-    if (char === Chars.Lt) {
-      sectionStart -= 2;
-      emitToken(TokenKind.Literal, State.BeforeOpenTag);
-    } else if (offset < style.length) {
-      if (style.lower[offset] !== char && style.upper[offset] !== char) {
-        sectionStart -= 2;
-        state = State.Literal;
-      }
-    } else if (char === Chars.Gt) {
-      emitToken(TokenKind.CloseTag);
-    } else if (!isWhiteSpace()) {
-      sectionStart -= 2;
-      state = State.Literal;
+  if (textMode !== TextMode.Data) {
+    const endTag = textEndTag;
+    if (!endTag) {
+      unexpected();
     }
-  } else if (inScript) {
     if (char === Chars.Lt) {
-      sectionStart -= 2;
+      resetTextClosingTag();
       emitToken(TokenKind.Literal, State.BeforeOpenTag);
-    } else if (offset < script.length) {
-      if (script.lower[offset] !== char && script.upper[offset] !== char) {
-        sectionStart -= 2;
-        state = State.Literal;
+    } else if (offset < endTag.length) {
+      if (endTag.lower[offset] !== char && endTag.upper[offset] !== char) {
+        resetTextClosingTag();
       }
     } else if (char === Chars.Gt) {
       emitToken(TokenKind.CloseTag);
     } else if (!isWhiteSpace()) {
-      sectionStart -= 2;
-      state = State.Literal;
+      resetTextClosingTag();
     }
   } else if (char === Chars.Gt) {
     // </ xxx >
@@ -535,7 +608,7 @@ function parseClosingTag() {
   }
 }
 
-function unexpected() {
+function unexpected(): never {
   throw new SyntaxError(
     `Unexpected token "${buffer.charAt(index)}" at ${index} when parse ${state}`,
   );

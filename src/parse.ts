@@ -23,7 +23,11 @@ export interface ParseOptions {
   /**
    * Populate each tag node with an attribute lookup map.
    */
-  setAttributeMap: boolean;
+  setAttributeMap?: boolean;
+  /**
+   * Treat noscript content as RAWTEXT when true, matching HTML parsers with scripting enabled.
+   */
+  scriptingEnabled?: boolean;
 }
 
 let index: number;
@@ -43,7 +47,9 @@ function init(input?: string, options?: ParseOptions) {
     tokens.length = 0;
     buffer = '';
   } else {
-    tokens = tokenize(input);
+    tokens = tokenize(input, {
+      scriptingEnabled: options?.scriptingEnabled,
+    });
     count = tokens.length;
     buffer = input;
   }
@@ -267,8 +273,9 @@ function parseCloseTag() {
 export function parse(input: string, options?: ParseOptions): INode[] {
   init(input, {
     setAttributeMap: false,
+    scriptingEnabled: true,
     ...options,
-  } as ParseOptions);
+  });
   while (index < count) {
     token = tokens[index];
     switch (token.type) {

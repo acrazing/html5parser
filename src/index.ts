@@ -6,7 +6,7 @@
 export { SyntaxKind } from './types';
 export type { IBaseNode, IAttributeValue, IAttribute, ITag, IText, INode } from './types';
 export { TokenKind, tokenize } from './tokenize';
-export type { IToken } from './tokenize';
+export type { IToken, TokenizeOptions } from './tokenize';
 export { parse } from './parse';
 export type { ParseOptions } from './parse';
 export { walk } from './walk';

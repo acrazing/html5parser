@@ -247,3 +247,86 @@ describe('simple cases', () => {
     });
   }
 });
+
+function fixedToken(value: string, type: TokenKind, start: number): IToken {
+  return {
+    start,
+    end: start + value.length,
+    value,
+    type,
+  };
+}
+
+function textElementTokens(tagName: string, bodyParts: string[]): IToken[] {
+  const openEnd = tagName.length + 1;
+  let start = openEnd + 1;
+  const tokens = [
+    fixedToken(tagName, TokenKind.OpenTag, 1),
+    fixedToken('', TokenKind.OpenTagEnd, openEnd),
+  ];
+  for (const bodyPart of bodyParts) {
+    tokens.push(fixedToken(bodyPart, TokenKind.Literal, start));
+    start += bodyPart.length;
+  }
+  tokens.push(fixedToken(tagName, TokenKind.CloseTag, start + 2));
+  return tokens;
+}
+
+describe('text element modes', () => {
+  const body = '<span>text</span>';
+
+  for (const tagName of [
+    'title',
+    'textarea',
+    'style',
+    'xmp',
+    'iframe',
+    'noembed',
+    'noframes',
+    'script',
+    'noscript',
+  ]) {
+    it(`treats ${tagName} content as text until its closing tag`, () => {
+      assert.deepStrictEqual(
+        tokenize(`<${tagName}>${body}</${tagName}>`),
+        textElementTokens(tagName, ['<span>text', '</span>']),
+      );
+    });
+  }
+
+  it('treats noscript content as HTML when scripting is disabled', () => {
+    assert.deepStrictEqual(
+      tokenize('<noscript><span>text</span></noscript>', {
+        scriptingEnabled: false,
+      }),
+      [
+        fixedToken('noscript', TokenKind.OpenTag, 1),
+        fixedToken('', TokenKind.OpenTagEnd, 9),
+        fixedToken('span', TokenKind.OpenTag, 11),
+        fixedToken('', TokenKind.OpenTagEnd, 15),
+        fixedToken('text', TokenKind.Literal, 16),
+        fixedToken('span', TokenKind.CloseTag, 22),
+        fixedToken('noscript', TokenKind.CloseTag, 29),
+      ],
+    );
+  });
+
+  it('ignores a leading LF in textarea content', () => {
+    assert.deepStrictEqual(tokenize('<textarea>\n<span>text</span></textarea>'), [
+      fixedToken('textarea', TokenKind.OpenTag, 1),
+      fixedToken('', TokenKind.OpenTagEnd, 9),
+      fixedToken('<span>text', TokenKind.Literal, 11),
+      fixedToken('</span>', TokenKind.Literal, 21),
+      fixedToken('textarea', TokenKind.CloseTag, 30),
+    ]);
+  });
+
+  it('treats plaintext content as text until EOF', () => {
+    const body = '<span>text</span></plaintext><p>after</p>';
+    assert.deepStrictEqual(tokenize(`<plaintext>${body}`), [
+      fixedToken('plaintext', TokenKind.OpenTag, 1),
+      fixedToken('', TokenKind.OpenTagEnd, 10),
+      fixedToken(body, TokenKind.Literal, 11),
+    ]);
+  });
+});

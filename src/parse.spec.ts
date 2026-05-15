@@ -372,3 +372,72 @@ describe('parse options', () => {
     expect(ast).toEqual([div]);
   });
 });
+
+function assertTagNode(node: INode): asserts node is ITag {
+  assert.strictEqual(node.type, SyntaxKind.Tag);
+}
+
+function assertTextNode(node: INode): asserts node is IText {
+  assert.strictEqual(node.type, SyntaxKind.Text);
+}
+
+describe('text element modes', () => {
+  const body = '<span>text</span>';
+
+  for (const tagName of [
+    'title',
+    'textarea',
+    'style',
+    'xmp',
+    'iframe',
+    'noembed',
+    'noframes',
+    'script',
+    'noscript',
+  ]) {
+    it(`parses ${tagName} content as text until its closing tag`, () => {
+      const ast = parse(`<${tagName}>${body}</${tagName}>`);
+      assert.strictEqual(ast.length, 1);
+      assertTagNode(ast[0]);
+      assert.strictEqual(ast[0].name, tagName);
+      assert.deepStrictEqual(ast[0].open, text(`<${tagName}>`, 0));
+      assert.deepStrictEqual(ast[0].close, text(`</${tagName}>`, tagName.length + body.length + 2));
+      assert.ok(Array.isArray(ast[0].body));
+      assert.deepStrictEqual(ast[0].body, [text(body, tagName.length + 2)]);
+    });
+  }
+
+  it('parses noscript content as HTML when scripting is disabled', () => {
+    const ast = parse('<noscript><span>text</span></noscript>', {
+      scriptingEnabled: false,
+    });
+    assert.strictEqual(ast.length, 1);
+    assertTagNode(ast[0]);
+    assert.ok(Array.isArray(ast[0].body));
+    assert.strictEqual(ast[0].body.length, 1);
+    assertTagNode(ast[0].body[0]);
+    assert.strictEqual(ast[0].body[0].name, 'span');
+  });
+
+  it('ignores a leading LF in textarea content', () => {
+    const ast = parse('<textarea>\nhello</textarea>');
+    assert.strictEqual(ast.length, 1);
+    assertTagNode(ast[0]);
+    assert.ok(Array.isArray(ast[0].body));
+    assert.strictEqual(ast[0].body.length, 1);
+    assertTextNode(ast[0].body[0]);
+    assert.strictEqual(ast[0].body[0].value, 'hello');
+    assert.strictEqual(ast[0].body[0].start, 11);
+  });
+
+  it('parses plaintext content as text until EOF', () => {
+    const body = '<span>text</span></plaintext><p>after</p>';
+    const ast = parse(`<plaintext>${body}`);
+    assert.strictEqual(ast.length, 1);
+    assertTagNode(ast[0]);
+    assert.strictEqual(ast[0].name, 'plaintext');
+    assert.strictEqual(ast[0].close, null);
+    assert.ok(Array.isArray(ast[0].body));
+    assert.deepStrictEqual(ast[0].body, [text(body, 11)]);
+  });
+});
