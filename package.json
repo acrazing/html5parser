@@ -1,7 +1,7 @@
 {
   "name": "html5parser",
   "description": "A super fast & tiny HTML5 parser",
-  "version": "3.0.0-beta.1",
+  "version": "3.0.0",
   "author": "acrazing <joking.young@gmail.com>",
   "keywords": [
     "html5",
