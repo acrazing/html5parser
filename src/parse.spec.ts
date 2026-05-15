@@ -373,6 +373,18 @@ describe('parse options', () => {
   });
 });
 
+describe('void elements', () => {
+  for (const tagName of ['basefont', 'bgsound', 'command', 'frame', 'image', 'keygen']) {
+    it(`parses ${tagName} as a void element`, () => {
+      const input = `<${tagName}>text`;
+      assert.deepStrictEqual(parse(input), [
+        tag(`<${tagName}>`, tagName, text(`<${tagName}>`, 0), [], void 0, null, 0),
+        text('text', tagName.length + 2),
+      ]);
+    });
+  }
+});
+
 function assertTagNode(node: INode): asserts node is ITag {
   assert.strictEqual(node.type, SyntaxKind.Tag);
 }
