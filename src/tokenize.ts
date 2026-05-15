@@ -21,22 +21,67 @@ const enum State {
   ClosingTag,
 }
 
+/**
+ * Token kinds emitted by tokenize.
+ */
 export const enum TokenKind {
+  /**
+   * Raw text outside tag syntax.
+   */
   Literal,
-  OpenTag, // trim leading '<'
-  OpenTagEnd, // trim tailing '>', only could be '/' or ''
-  CloseTag, // trim leading '</' and tailing '>'
-  Whitespace, // the whitespace between attributes
+  /**
+   * Opening tag name without the leading <.
+   */
+  OpenTag,
+  /**
+   * Opening tag end marker without the trailing >; value is / or empty.
+   */
+  OpenTagEnd,
+  /**
+   * Closing tag name without the leading </ or trailing >.
+   */
+  CloseTag,
+  /**
+   * Whitespace between attributes.
+   */
+  Whitespace,
+  /**
+   * Attribute value assignment marker.
+   */
   AttrValueEq,
+  /**
+   * Unquoted attribute value.
+   */
   AttrValueNq,
+  /**
+   * Single-quoted attribute value.
+   */
   AttrValueSq,
+  /**
+   * Double-quoted attribute value.
+   */
   AttrValueDq,
 }
 
+/**
+ * Token emitted by the HTML tokenizer.
+ */
 export interface IToken {
+  /**
+   * Zero-based start offset in the source string.
+   */
   start: number;
+  /**
+   * Zero-based end offset in the source string.
+   */
   end: number;
+  /**
+   * Raw token value after token-specific trimming.
+   */
   value: string;
+  /**
+   * Token category.
+   */
   type: TokenKind;
 }
 
@@ -115,6 +160,9 @@ function init(input: string) {
   offset = 0;
 }
 
+/**
+ * Convert an HTML string into a flat token stream.
+ */
 export function tokenize(input: string): IToken[] {
   init(input);
   while (index < bufSize) {

@@ -3,16 +3,31 @@
  * @since 2017-08-19 15:56:14
  */
 
-function createMap<T>(keys: string, value: T): Record<string, T> {
-  return keys.split(',').reduce((pre, now) => {
-    pre[now] = value;
-    return pre;
-  }, Object.create(null));
-}
+/**
+ * HTML tags that do not require closing tags.
+ */
+export const selfCloseTags = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+  '!doctype',
+  '',
+  '!',
+  '!--',
+]);
 
-export const selfCloseTags = createMap<true>(
-  'area,base,br,col,embed,hr,img,input,link,meta,param,source,track,wbr,!doctype,,!,!--',
-  true,
-);
-
-export const noNestedTags = createMap<true>('li,option,select,textarea', true);
+/**
+ * Tags that implicitly close a previous tag of the same name.
+ */
+export const noNestedTags = new Set(['li', 'option', 'select', 'textarea']);

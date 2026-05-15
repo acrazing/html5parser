@@ -16,10 +16,13 @@ interface IContext {
   tag: ITag;
 }
 
+/**
+ * Options that control AST construction.
+ */
 export interface ParseOptions {
-  // create tag's attributes map
-  // if true, will set ITag.attributeMap property
-  // as a `Record<string, IAttribute>`
+  /**
+   * Populate each tag node with an attribute lookup map.
+   */
   setAttributeMap: boolean;
 }
 
@@ -59,7 +62,7 @@ function pushNode(_node: ITag | IText) {
   } else if (
     _node.type === SyntaxKind.Tag &&
     _node.name === tagChain.tag.name &&
-    noNestedTags[_node.name]
+    noNestedTags.has(_node.name)
   ) {
     tagChain = tagChain.parent;
     pushNode(_node);
@@ -185,7 +188,7 @@ function parseOpenTag() {
     if (token.type === TokenKind.OpenTagEnd) {
       tag.end = tag.open.end = token.end + 1;
       tag.open.value = buffer.substring(tag.open.start, tag.open.end);
-      if (token.value === '' && !selfCloseTags[tag.name]) {
+      if (token.value === '' && !selfCloseTags.has(tag.name)) {
         tag.body = [];
         pushTagChain(tag);
       } else {
@@ -258,6 +261,9 @@ function parseCloseTag() {
   tagChain = _context;
 }
 
+/**
+ * Parse an HTML string into an AST.
+ */
 export function parse(input: string, options?: ParseOptions): INode[] {
   init(input, {
     setAttributeMap: false,

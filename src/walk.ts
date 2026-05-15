@@ -6,8 +6,17 @@
 import { SyntaxKind } from './types';
 import type { INode } from './types';
 
+/**
+ * Visitor callbacks used while walking an AST.
+ */
 export interface WalkOptions {
+  /**
+   * Called before visiting a node's children.
+   */
   enter?(node: INode, parent: INode | undefined, index: number): void;
+  /**
+   * Called after visiting a node's children.
+   */
   leave?(node: INode, parent: INode | undefined, index: number): void;
 }
 
@@ -21,6 +30,9 @@ function visit(node: INode, parent: INode | undefined, index: number, options: W
   options.leave && options.leave(node, parent, index);
 }
 
+/**
+ * Traverse an AST depth-first.
+ */
 export function walk(ast: INode[], options: WalkOptions) {
   for (let i = 0; i < ast.length; i++) {
     visit(ast[i], void 0, i, options);

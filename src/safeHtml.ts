@@ -8,13 +8,31 @@ import { parse } from './parse';
 import { SyntaxKind } from './types';
 import type { INode } from './types';
 
+/**
+ * Options used to sanitize and stringify HTML.
+ */
 export interface SafeHtmlOptions {
+  /**
+   * Tag names allowed in the sanitized output.
+   */
   allowedTags: string[];
+  /**
+   * Attribute names allowed on every allowed tag.
+   */
   allowedAttrs: string[];
+  /**
+   * Attribute names allowed only for specific tags.
+   */
   tagAllowedAttrs: Record<string, string[]>;
+  /**
+   * URL pattern allowed for href and src attributes.
+   */
   allowedUrl: RegExp;
 }
 
+/**
+ * Default safe HTML allowlist.
+ */
 export const safeHtmlDefaultOptions: SafeHtmlOptions = {
   allowedTags: [
     'a',
@@ -106,6 +124,9 @@ export const safeHtmlDefaultOptions: SafeHtmlOptions = {
   allowedUrl: /^(?:mailto|tel|https?|ftp|[^:]*[^a-z0-9.+-][^:]*):|^[^:]*$/i,
 };
 
+/**
+ * Sanitize an HTML string using the configured allowlist.
+ */
 export function safeHtml(input: string, options: Partial<SafeHtmlOptions> = {}): string {
   const config: SafeHtmlOptions = {
     ...safeHtmlDefaultOptions,
@@ -128,7 +149,7 @@ function stringify(ast: INode[], config: SafeHtmlOptions, input: string): string
       if (config.allowedTags.indexOf(node.name) === -1) {
         return '';
       }
-      if (selfCloseTags[node.name]) {
+      if (selfCloseTags.has(node.name)) {
         if (node.body !== void 0) {
           throw new Error(`self closed tag "${node.name}" should not have body`);
         }

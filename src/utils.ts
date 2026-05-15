@@ -3,6 +3,9 @@
  * @since 2017-08-20 21:41:39
  */
 
+/**
+ * Build cumulative line ending offsets for source position lookup.
+ */
 export function getLineRanges(input: string) {
   return input.split('\n').reduce(
     (arr, line) => {
@@ -13,6 +16,9 @@ export function getLineRanges(input: string) {
   );
 }
 
+/**
+ * Convert a source offset to one-based line and column coordinates.
+ */
 export function getPosition(ranges: number[], offset: number): [number, number] {
   let line = NaN;
   let column = NaN;
