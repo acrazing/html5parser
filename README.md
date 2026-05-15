@@ -18,6 +18,7 @@
   - Core
   - [tokenize()](#tokenizeinput)
   - [parse()](#parseinput)
+  - [stringify()](#stringifyast)
   - Utilities
   - [walk()](#walkast-options)
 - [Warnings](#warnings)
@@ -198,6 +199,19 @@ function parse(input: string, options?: ParseOptions): INode[];
     Tag = 'Tag',
   }
   ```
+
+### stringify(ast)
+
+Serialize AST nodes back to HTML:
+
+```typescript jsx
+function stringify(ast: INode | INode[]): string;
+```
+
+`stringify` is a serializer, not a sanitizer. Text and attribute values are
+emitted as-is, so escape user-created values before adding them to the AST.
+Opening tag whitespace is normalized, and attributes are serialized from
+`ITag.attributes` in order. `ITag.attributeMap` is only a lookup view.
 
 ### walk(ast, options)
 
