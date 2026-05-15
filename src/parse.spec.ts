@@ -1,16 +1,12 @@
-/*!
- *
- * Copyright 2017 - acrazing
- *
+/*
  * @author acrazing joking.young@gmail.com
  * @since 2017-08-20 17:32:24
- * @version 1.0.0
- * @desc parse.spec.ts
  */
 
-import * as assert from 'assert';
+import * as assert from 'node:assert';
 import { parse } from './parse';
-import { IAttribute, IAttributeValue, INode, ITag, IText, SyntaxKind } from './types';
+import { SyntaxKind } from './types';
+import type { IAttribute, IAttributeValue, INode, ITag, IText } from './types';
 
 export let index = 0;
 
@@ -18,7 +14,7 @@ export function text(input: string, start = index): IText {
   return {
     type: SyntaxKind.Text,
     start: start,
-    end: index = input.length + start,
+    end: (index = input.length + start),
     value: input,
   };
 }
@@ -35,7 +31,7 @@ export function tag(
 ): ITag {
   return {
     start: start,
-    end: index = start + input.length,
+    end: (index = start + input.length),
     type: SyntaxKind.Tag,
     open: open,
     name: name,
@@ -50,7 +46,7 @@ export function tag(
 function attr(name: IText, value?: IAttributeValue): IAttribute {
   return {
     start: name.start,
-    end: index = value ? value.end : name.end,
+    end: (index = value ? value.end : name.end),
     name: name,
     value: value,
   };
@@ -59,7 +55,7 @@ function attr(name: IText, value?: IAttributeValue): IAttribute {
 function value(input: string, quote: undefined | "'" | '"', start = index): IAttributeValue {
   return {
     start: start,
-    end: index = start + (quote === void 0 ? 0 : 2) + input.length,
+    end: (index = start + (quote === void 0 ? 0 : 2) + input.length),
     value: input,
     quote: quote,
   };

@@ -1,11 +1,12 @@
 /*
+ * @author acrazing joking.young@gmail.com
  * @since 2020-09-09 22:53:14
- * @author acrazing <joking.young@gmail.com>
  */
 
 import { selfCloseTags } from './config';
 import { parse } from './parse';
-import { INode, SyntaxKind } from './types';
+import { SyntaxKind } from './types';
+import type { INode } from './types';
 
 export interface SafeHtmlOptions {
   allowedTags: string[];

@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "esnext",
-    "lib": ["es5", "dom"],
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM"],
     "allowJs": false,
-    "jsx": "react",
     "declaration": true,
     "declarationMap": false,
     "sourceMap": true,
@@ -12,8 +11,6 @@
     "rootDir": "./src",
     "removeComments": false,
     "noEmit": false,
-    "importHelpers": true,
-    "downlevelIteration": true,
     "strict": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
@@ -22,18 +19,19 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "resolveJsonModule": false,
-    "experimentalDecorators": true,
-    "charset": "utf-8",
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
     "emitBOM": false,
     "newLine": "LF",
-    "pretty": true,
+    "ignoreDeprecations": "6.0",
     "allowUnreachableCode": false,
     "stripInternal": true,
-    "allowUnusedLabels": false
+    "allowUnusedLabels": false,
+    "skipLibCheck": true,
+    "types": ["node", "vitest/globals"]
   },
   "include": ["src"]
 }

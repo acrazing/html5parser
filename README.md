@@ -39,7 +39,7 @@
 2. CDN
 
    ```html
-   <script src="https://unpkg.com/html5parser@latest/dist/html5parser.umd.js"></script>
+   <script src="https://unpkg.com/html5parser@latest/dist/index.umd.js"></script>
    ```
 
 ## Quick start

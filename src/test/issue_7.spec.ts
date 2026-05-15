@@ -1,6 +1,6 @@
 /*
+ * @author acrazing joking.young@gmail.com
  * @since 2020-09-09 22:43:03
- * @author acrazing <joking.young@gmail.com>
  */
 
 import { parse } from '../parse';

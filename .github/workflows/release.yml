@@ -1,0 +1,110 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version bump type
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prepatch
+          - preminor
+          - premajor
+          - prerelease
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Enable Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Bump version
+        id: version
+        env:
+          VERSION_BUMP: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$VERSION_BUMP" == pre* ]]; then
+            npm version "$VERSION_BUMP" --preid beta --no-git-tag-version
+            npm_tag=beta
+            github_prerelease=true
+          else
+            npm version "$VERSION_BUMP" --no-git-tag-version
+            npm_tag=latest
+            github_prerelease=false
+          fi
+
+          version="$(node -p "require('./package.json').version")"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+          echo "npm_tag=${npm_tag}" >> "$GITHUB_OUTPUT"
+          echo "github_prerelease=${github_prerelease}" >> "$GITHUB_OUTPUT"
+
+      - name: Run tests
+        run: yarn test
+
+      - name: Check types
+        run: yarn typecheck
+
+      - name: Build package
+        run: yarn build
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json yarn.lock
+          git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
+          git tag -a "${{ steps.version.outputs.tag }}" -m "${{ steps.version.outputs.tag }}"
+
+      - name: Push version bump and tag
+        run: git push origin "HEAD:${GITHUB_REF_NAME}" "${{ steps.version.outputs.tag }}"
+
+      - name: Publish to npm
+        run: npm publish --access public --tag "${{ steps.version.outputs.npm_tag }}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_PRERELEASE: ${{ steps.version.outputs.github_prerelease }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          args=(--title "$TAG" --generate-notes)
+
+          if [ "$GITHUB_PRERELEASE" = "true" ]; then
+            args+=(--prerelease)
+          fi
+
+          gh release create "$TAG" "${args[@]}"

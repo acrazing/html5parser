@@ -1,6 +1,6 @@
 /*
+ * @author acrazing joking.young@gmail.com
  * @since 2020-09-09 22:04:54
- * @author acrazing <joking.young@gmail.com>
  */
 
 import { parse } from '../parse';
@@ -18,16 +18,7 @@ describe('issue #6', () => {
   });
   it('should parse upper case as expected', () => {
     expect(parse('<Test></Test>')).toEqual([
-      tag(
-        '<Test></Test>',
-        'test',
-        text('<Test>', 0),
-        [],
-        [],
-        text('</Test>'),
-        0,
-        'Test',
-      ),
+      tag('<Test></Test>', 'test', text('<Test>', 0), [], [], text('</Test>'), 0, 'Test'),
     ]);
   });
 });

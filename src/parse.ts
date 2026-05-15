@@ -1,16 +1,13 @@
-/*!
- *
- * Copyright 2017 - acrazing
- *
+/*
  * @author acrazing joking.young@gmail.com
  * @since 2017-08-19 00:54:46
- * @version 1.0.0
- * @desc parse.ts
  */
 
 import { noNestedTags, selfCloseTags } from './config';
-import { IToken, tokenize, TokenKind } from './tokenize';
-import { IAttribute, IAttributeValue, INode, ITag, IText, SyntaxKind } from './types';
+import { tokenize, TokenKind } from './tokenize';
+import type { IToken } from './tokenize';
+import { SyntaxKind } from './types';
+import type { IAttribute, IAttributeValue, INode, ITag, IText } from './types';
 import { getLineRanges, getPosition } from './utils';
 import { walk } from './walk';
 
@@ -117,8 +114,8 @@ function createAttributeValue(): IAttributeValue {
       token.type === TokenKind.AttrValueNq
         ? void 0
         : token.type === TokenKind.AttrValueSq
-        ? "'"
-        : '"',
+          ? "'"
+          : '"',
   };
 }
 

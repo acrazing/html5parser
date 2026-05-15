@@ -1,17 +1,11 @@
-/*!
- *
- * Copyright 2017 - acrazing
- *
+/*
  * @author acrazing joking.young@gmail.com
  * @since 2017-08-19 14:15:25
- * @version 1.0.0
- * @desc tokenize.spec.ts
- *
- * @formatter:off
  */
 
-import * as assert from 'assert';
-import { IToken, tokenize, TokenKind } from './tokenize';
+import * as assert from 'node:assert';
+import { tokenize, TokenKind } from './tokenize';
+import type { IToken } from './tokenize';
 
 interface ICase {
   name: string;

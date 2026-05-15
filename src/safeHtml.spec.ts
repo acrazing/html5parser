@@ -1,6 +1,6 @@
 /*
+ * @author acrazing joking.young@gmail.com
  * @since 2020-09-09 23:37:28
- * @author acrazing <joking.young@gmail.com>
  */
 
 import { safeHtml } from './safeHtml';

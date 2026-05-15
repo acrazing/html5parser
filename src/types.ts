@@ -1,11 +1,6 @@
-/*!
- *
- * Copyright 2017 - acrazing
- *
+/*
  * @author acrazing joking.young@gmail.com
  * @since 2017-08-18 15:17:51
- * @version 1.0.0
- * @desc types.ts
  */
 
 export enum SyntaxKind {

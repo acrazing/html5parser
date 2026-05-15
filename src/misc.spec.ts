@@ -1,16 +1,10 @@
-/*!
- *
- * Copyright 2017 - acrazing
- *
+/*
  * @author acrazing joking.young@gmail.com
  * @since 2017-08-22 22:17:46
- * @version 1.0.0
- * @desc misc.spec.ts
  */
 
 import * as fs from 'fs-extra';
-import fetch from 'node-fetch';
-import * as path from 'path';
+import * as path from 'node:path';
 import { parse } from './parse';
 
 function run(url: string) {
@@ -32,11 +26,7 @@ function run(url: string) {
     });
 }
 
-const scenes = [
-  'https://www.baidu.com/',
-  'https://www.qq.com/?fromdefault',
-  'https://www.taobao.com/',
-];
+const scenes = ['https://www.github.com/', 'https://www.google.com/', 'https://www.npmjs.com/'];
 
 describe('real scenarios', () => {
   for (const scene of scenes) {
