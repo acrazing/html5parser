@@ -213,6 +213,14 @@ emitted as-is, so escape user-created values before adding them to the AST.
 Opening tag whitespace is normalized, and attributes are serialized from
 `ITag.attributes` in order. `ITag.attributeMap` is only a lookup view.
 
+Use `setAttribute` and `removeAttribute` to update a tag's serialized
+attributes:
+
+```typescript jsx
+function setAttribute(tag: ITag, name: string, value?: string): void;
+function removeAttribute(tag: ITag, name: string): void;
+```
+
 ### walk(ast, options)
 
 Visit all the nodes of the AST with specified callbacks:

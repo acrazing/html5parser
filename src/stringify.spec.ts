@@ -5,7 +5,7 @@
 
 import * as assert from 'node:assert';
 import { parse } from './parse';
-import { stringify } from './stringify';
+import { removeAttribute, setAttribute, stringify } from './stringify';
 import { SyntaxKind } from './types';
 import type { IAttribute, INode, ITag } from './types';
 
@@ -54,6 +54,43 @@ describe('stringify', () => {
     assertTagNode(ast[0]);
     ast[0].attributeMap!.href.value!.value = 'after';
     assert.strictEqual(stringify(ast), '<a href="after" disabled>Link</a>');
+  });
+
+  it('sets an existing attribute and syncs attributeMap', () => {
+    const ast = parse('<a href="before">Link</a>', {
+      setAttributeMap: true,
+    });
+    assertTagNode(ast[0]);
+    setAttribute(ast[0], 'href', 'after');
+    assert.strictEqual(ast[0].attributeMap!.href.value!.value, 'after');
+    assert.strictEqual(stringify(ast), '<a href="after">Link</a>');
+  });
+
+  it('adds a new attribute and syncs attributeMap', () => {
+    const ast = parse('<a>Link</a>', {
+      setAttributeMap: true,
+    });
+    assertTagNode(ast[0]);
+    setAttribute(ast[0], 'target', '_blank');
+    assert.strictEqual(ast[0].attributeMap!.target.value!.value, '_blank');
+    assert.strictEqual(stringify(ast), '<a target="_blank">Link</a>');
+  });
+
+  it('sets boolean attributes', () => {
+    const ast = parse('<input>');
+    assertTagNode(ast[0]);
+    setAttribute(ast[0], 'disabled');
+    assert.strictEqual(stringify(ast), '<input disabled>');
+  });
+
+  it('removes all matching attributes and syncs attributeMap', () => {
+    const ast = parse('<a href="one" href="two" target="_blank">Link</a>', {
+      setAttributeMap: true,
+    });
+    assertTagNode(ast[0]);
+    removeAttribute(ast[0], 'href');
+    assert.strictEqual(ast[0].attributeMap!.href, void 0);
+    assert.strictEqual(stringify(ast), '<a target="_blank">Link</a>');
   });
 
   it('serializes attributes added to attributes array', () => {

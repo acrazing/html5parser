@@ -9,6 +9,6 @@ export { TokenKind, tokenize } from './tokenize';
 export type { IToken, TokenizeOptions } from './tokenize';
 export { parse } from './parse';
 export type { ParseOptions } from './parse';
-export { stringify } from './stringify';
+export { removeAttribute, setAttribute, stringify } from './stringify';
 export { walk } from './walk';
 export type { WalkOptions } from './walk';
