@@ -6,7 +6,12 @@
 import { selfCloseTags } from './config';
 import { parse } from './parse';
 import { SyntaxKind } from './types';
-import type { INode } from './types';
+import type { IAttribute, INode } from './types';
+
+/**
+ * Hook used to sanitize inline CSS before it is emitted.
+ */
+export type SanitizeStyle = (value: string) => string | null | undefined | false;
 
 /**
  * Options used to sanitize and stringify HTML.
@@ -28,6 +33,10 @@ export interface SafeHtmlOptions {
    * URL pattern allowed for href and src attributes.
    */
   allowedUrl: RegExp;
+  /**
+   * Sanitize inline style values. Styles are removed when this hook is not set.
+   */
+  sanitizeStyle?: SanitizeStyle;
 }
 
 /**
@@ -111,7 +120,7 @@ export const safeHtmlDefaultOptions: SafeHtmlOptions = {
     'var',
     'wbr',
   ],
-  allowedAttrs: ['style'],
+  allowedAttrs: [],
   tagAllowedAttrs: {
     a: ['href', 'target'],
     img: ['src'],
@@ -159,25 +168,8 @@ function stringify(ast: INode[], config: SafeHtmlOptions, input: string): string
         }
       }
       const attrs = node.attributes
-        .filter((a) => {
-          if (
-            config.allowedAttrs.indexOf(a.name.value) > -1 ||
-            config.tagAllowedAttrs[node.name]?.indexOf(a.name.value) > -1
-          ) {
-            if (!a.value) {
-              return true;
-            }
-            if (a.name.value !== 'src' && a.name.value !== 'href') {
-              return true;
-            }
-            if (config.allowedUrl.test(a.value.value)) {
-              return true;
-            }
-            return false;
-          }
-          return false;
-        })
-        .map((a) => input.substring(a.start, a.end))
+        .map((attr) => stringifyAttribute(attr, node.name, config, input))
+        .filter((attr): attr is string => attr !== void 0)
         .join(' ');
       const head = '<' + node.rawName + (attrs ? ' ' + attrs : '') + '>';
       if (!node.body) {
@@ -186,4 +178,42 @@ function stringify(ast: INode[], config: SafeHtmlOptions, input: string): string
       return head + stringify(node.body, config, input) + `</${node.rawName}>`;
     })
     .join('');
+}
+
+function stringifyAttribute(
+  attr: IAttribute,
+  nodeName: string,
+  config: SafeHtmlOptions,
+  input: string,
+): string | undefined {
+  const name = attr.name.value.toLowerCase();
+  if (name === 'style') {
+    return stringifyStyleAttribute(attr, config);
+  }
+  const tagAllowedAttrs = config.tagAllowedAttrs[nodeName] ?? [];
+  if (config.allowedAttrs.indexOf(name) === -1 && tagAllowedAttrs.indexOf(name) === -1) {
+    return void 0;
+  }
+  if (!attr.value) {
+    return input.substring(attr.start, attr.end);
+  }
+  if ((name === 'src' || name === 'href') && !config.allowedUrl.test(attr.value.value)) {
+    return void 0;
+  }
+  return input.substring(attr.start, attr.end);
+}
+
+function stringifyStyleAttribute(attr: IAttribute, config: SafeHtmlOptions): string | undefined {
+  if (!attr.value || !config.sanitizeStyle) {
+    return void 0;
+  }
+  const value = config.sanitizeStyle(attr.value.value);
+  if (typeof value !== 'string') {
+    return void 0;
+  }
+  return `style="${escapeAttributeValue(value)}"`;
+}
+
+function escapeAttributeValue(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }

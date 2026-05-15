@@ -12,4 +12,4 @@ export type { ParseOptions } from './parse';
 export { walk } from './walk';
 export type { WalkOptions } from './walk';
 export { safeHtmlDefaultOptions, safeHtml } from './safeHtml';
-export type { SafeHtmlOptions } from './safeHtml';
+export type { SafeHtmlOptions, SanitizeStyle } from './safeHtml';

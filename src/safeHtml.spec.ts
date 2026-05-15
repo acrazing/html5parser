@@ -29,7 +29,7 @@ const htmlOutput = `
   <h2>H2</h2>
 \t
 \t
-  <p style="padding: 0">
+  <p>
     <span>Span</span>
     <table>
       <tr><td>TD</td></tr>
@@ -44,5 +44,48 @@ const htmlOutput = `
 describe('safeHtml', () => {
   it('should stringify safe html as expected', () => {
     expect(safeHtml(htmlInput)).toEqual(htmlOutput);
+  });
+
+  it('should remove style attributes by default', () => {
+    expect(safeHtml('<p style="color: red">Text</p>')).toEqual('<p>Text</p>');
+  });
+
+  it('should allow sanitized style attributes', () => {
+    expect(
+      safeHtml('<p style="color: red; background: url(javascript:)">Text</p>', {
+        sanitizeStyle(value) {
+          expect(value).toBe('color: red; background: url(javascript:)');
+          return 'color: red';
+        },
+      }),
+    ).toEqual('<p style="color: red">Text</p>');
+  });
+
+  it('should remove style attributes rejected by sanitizeStyle', () => {
+    expect(
+      safeHtml('<p style="color: red">Text</p>', {
+        sanitizeStyle() {
+          return false;
+        },
+      }),
+    ).toEqual('<p>Text</p>');
+  });
+
+  it('should not allow raw style attributes through allowedAttrs', () => {
+    expect(
+      safeHtml('<p STYLE="color: red">Text</p>', {
+        allowedAttrs: ['style'],
+      }),
+    ).toEqual('<p>Text</p>');
+  });
+
+  it('should escape sanitized style attribute values', () => {
+    expect(
+      safeHtml('<p style="color: red">Text</p>', {
+        sanitizeStyle() {
+          return 'font-family: "x"; content: "<"';
+        },
+      }),
+    ).toEqual('<p style="font-family: &quot;x&quot;; content: &quot;&lt;&quot;">Text</p>');
   });
 });

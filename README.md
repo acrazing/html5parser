@@ -237,8 +237,14 @@ function safeHtml(input: string, options?: Partial<SafeHtmlOptions>): string;
     allowedAttrs: string[];
     tagAllowedAttrs: Record<string, string[]>;
     allowedUrl: RegExp;
+    sanitizeStyle?: SanitizeStyle;
   }
+
+  export type SanitizeStyle = (value: string) => string | null | undefined | false;
   ```
+
+  The `style` attribute is removed by default. Provide `sanitizeStyle` to opt in
+  to inline styles with your own CSS sanitizer.
 
 #### safeHtmlDefaultOptions
 
