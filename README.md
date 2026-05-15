@@ -20,8 +20,6 @@
   - [parse()](#parseinput)
   - Utilities
   - [walk()](#walkast-options)
-  - [safeHtml()](#safehtmlinput)
-    - [safeHtmlDefaultOptions](#safehtmldefaultoptions)
 - [Warnings](#warnings)
 - [Benchmark](#benchmark)
 
@@ -217,43 +215,6 @@ function walk(ast: INode[], options: WalkOptions): void;
     leave?(node: INode, parent: INode | void, index: number): void;
   }
   ```
-
-### safeHtml(input)
-
-Parse input to AST and keep the tags and attributes by whitelists, and then
-print it to a string.
-
-```typescript jsx
-function safeHtml(input: string, options?: Partial<SafeHtmlOptions>): string;
-```
-
-<a name="safehtmloptions"></a>
-
-- `SafeHtmlOptions`
-
-  ```typescript jsx
-  export interface SafeHtmlOptions {
-    allowedTags: string[];
-    allowedAttrs: string[];
-    tagAllowedAttrs: Record<string, string[]>;
-    allowedUrl: RegExp;
-    sanitizeStyle?: SanitizeStyle;
-  }
-
-  export type SanitizeStyle = (value: string) => string | null | undefined | false;
-  ```
-
-  The `style` attribute is removed by default. Provide `sanitizeStyle` to opt in
-  to inline styles with your own CSS sanitizer.
-
-#### safeHtmlDefaultOptions
-
-The default options of [`safeHtml`](#safehtmlinput), you can modify it, its
-effect is global.
-
-```typescript jsx
-const safeHtmlDefaultOptions: SafeHtmlOptions;
-```
 
 ## Warnings
 
